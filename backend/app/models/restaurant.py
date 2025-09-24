@@ -1,9 +1,6 @@
 from datetime import datetime, timezone
 from sqlmodel import Field, Relationship, SQLModel
 
-# from .recipe import Recipe
-# from .user import User
-
 
 class RestaurantBase(SQLModel):
     restaurant_name: str = Field(max_length=100)

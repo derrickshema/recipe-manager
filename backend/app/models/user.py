@@ -4,8 +4,6 @@ from sqlmodel import Field, Index, Relationship, SQLModel, UniqueConstraint
 from pydantic import field_validator, EmailStr
 import enum
 
-# from .restaurant import Restaurant
-
 class Role(str, enum.Enum):
     """User roles for access control."""
     ADMIN = "admin"

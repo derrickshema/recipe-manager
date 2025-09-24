@@ -3,7 +3,6 @@ from typing import List
 
 from sqlmodel import JSON, Column, Field, Relationship, SQLModel
 
-# from .restaurant import Restaurant
 
 
 class RecipeBase(SQLModel):
