@@ -1,12 +1,12 @@
-import datetime
+from datetime import datetime, timezone
 import re
-from time import timezone
-from sqlmodel import Enum, Field, Index, Relationship, SQLModel, UniqueConstraint
+from sqlmodel import Field, Index, Relationship, SQLModel, UniqueConstraint
 from pydantic import field_validator, EmailStr
+import enum
 
-from backend.app.models.restaurant import Restaurant
+# from .restaurant import Restaurant
 
-class Role(str, Enum):
+class Role(str, enum.Enum):
     """User roles for access control."""
     ADMIN = "admin"
     EDITOR = "editor"
@@ -20,10 +20,8 @@ class UserBase(SQLModel):
     last_name: str = Field(max_length=50)
     username: str = Field(index=True, unique=True, description="Unique username for the user")
     email: EmailStr = Field(index=True, unique=True, description="User's email address")
-    role: Role = Role.VIEWER    
-    restaurant_id: int | None = Field(default=None, foreign_key="restaurant.id", index=True)
-
-    restaurant: "Restaurant" = Relationship(back_populates="users") 
+    role: Role = Field(default=Role.VIEWER)    
+    restaurant_id: int = Field(foreign_key="restaurant.id", index=True)
 
     @field_validator('username')
     def validate_username(cls, v):
@@ -40,13 +38,6 @@ class UserBase(SQLModel):
 
 class User(UserBase, table=True):
     """User model for database table."""
-    __tablename__ = "user"
-    __table_args__ = (
-        UniqueConstraint('username', name='uq_user_username'),
-        UniqueConstraint('email', name='uq_user_email'),
-        Index('ix_user_username', 'username'),
-        Index('ix_user_email', 'email'),
-    )
     id: int | None = Field(default=None, primary_key=True)
     hashed_password: str = Field(max_length=255) # Store hashed password
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -54,6 +45,8 @@ class User(UserBase, table=True):
         default_factory=lambda: datetime.now(timezone.utc),
         sa_column_kwargs={"onupdate": lambda: datetime.now(timezone.utc)}
     ) 
+
+    restaurant: "Restaurant" = Relationship(back_populates="users") 
 
 class UserCreate(UserBase):
     """Model for creating a new user."""

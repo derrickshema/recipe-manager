@@ -1,9 +1,9 @@
-import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from sqlmodel import JSON, Column, Field, Relationship, SQLModel
 
-from backend.app.models.restaurant import Restaurant
+# from .restaurant import Restaurant
 
 
 class RecipeBase(SQLModel):
@@ -14,14 +14,14 @@ class RecipeBase(SQLModel):
     prep_time: int | None = None  # in minutes
     cook_time: int | None = None  # in minutes
     servings: int | None = None
-    restaurant_id: int | None = Field(default=None, foreign_key="restaurant.id")
-
-    restaurant: "Restaurant" = Relationship(back_populates="recipes")
+    restaurant_id: int = Field(foreign_key="restaurant.id")
 
 class Recipe(RecipeBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow, sa_column_kwargs={"onupdate": datetime.utcnow})
+    created_at: datetime = Field(default_factory=datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=datetime.now(timezone.utc), sa_column_kwargs={"onupdate": datetime.utcnow})
+
+    restaurant: "Restaurant" = Relationship(back_populates="recipes")
 
 class RecipeCreate(RecipeBase):
     pass
