@@ -1,0 +1,69 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlmodel import Session, select
+
+from ..db.session import get_session
+from ..models.restaurant import Restaurant, RestaurantCreate, RestaurantUpdate
+from ..models.user import User
+from ..routes.auth_routes import get_current_user
+
+
+router = APIRouter(prefix="/restaurants", tags=["Restaurants"])
+
+@router.post("/", response_model=Restaurant, status_code=status.HTTP_201_CREATED)
+async def create_restaurant(restaurant: RestaurantCreate, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+    """
+    Creates a new restaurant in the database.
+    """
+    new_restaurant = Restaurant.model_validate(restaurant)
+    session.add(new_restaurant)
+    session.commit()
+    session.refresh(new_restaurant)
+    return new_restaurant
+
+@router.get("/", response_model=list[Restaurant])
+async def get_restaurants(session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+    """
+    Fetches all restaurants from the database.
+    """
+    restaurants = session.exec(select(Restaurant)).all()
+    return restaurants
+
+@router.get("/{restaurant_id}", response_model=Restaurant)
+async def get_restaurant(restaurant_id: int, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+    """
+    Fetches a restaurant by ID from the database.
+    """
+    restaurant = session.exec(select(Restaurant).where(Restaurant.id == restaurant_id)).first()
+    if not restaurant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Restaurant not found")
+    return restaurant
+
+@router.put("/{restaurant_id}", response_model=Restaurant)
+async def update_restaurant(restaurant_id: int, updated_restaurant: RestaurantUpdate, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+    """
+    Updates a restaurant's information in the database.
+    """
+    existing_restaurant = session.exec(select(Restaurant).where(Restaurant.id == restaurant_id)).first()
+    if not existing_restaurant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Restaurant not found")
+
+    for key, value in updated_restaurant.model_dump(exclude_unset=True).items():
+        setattr(existing_restaurant, key, value)
+
+    session.add(existing_restaurant)
+    session.commit()
+    session.refresh(existing_restaurant)
+    return existing_restaurant
+
+@router.delete("/{restaurant_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_restaurant(restaurant_id: int, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+    """
+    Deletes a restaurant by ID from the database.
+    """
+    restaurant = session.exec(select(Restaurant).where(Restaurant.id == restaurant_id)).first()
+    if not restaurant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Restaurant not found")
+
+    session.delete(restaurant)
+    session.commit()
+    return None

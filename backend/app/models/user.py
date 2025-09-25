@@ -19,7 +19,7 @@ class UserBase(SQLModel):
     username: str = Field(index=True, unique=True, description="Unique username for the user")
     email: EmailStr = Field(index=True, unique=True, description="User's email address")
     role: Role = Field(default=Role.VIEWER)    
-    restaurant_id: int = Field(foreign_key="restaurant.id", index=True)
+    restaurant_id: int | None = Field(default=None, foreign_key="restaurant.id", index=True)
 
     @field_validator('username')
     def validate_username(cls, v):

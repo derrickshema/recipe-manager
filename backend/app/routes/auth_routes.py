@@ -59,7 +59,15 @@ async def register_user(user_in: UserCreate, session: Session = Depends(get_sess
 
     # Hash the password before storing
     hashed_password = hash_password(user_in.password)
-    db_user = User(username=user_in.username, hashed_password=hashed_password, email=user_in.email)
+    db_user = User(
+    username=user_in.username,
+    hashed_password=hashed_password,
+    email=user_in.email,
+    first_name=user_in.first_name,
+    last_name=user_in.last_name,
+    role=user_in.role,
+    restaurant_id=user_in.restaurant_id,
+    )
 
     session.add(db_user)
     session.commit()
