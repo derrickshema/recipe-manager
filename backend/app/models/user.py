@@ -4,11 +4,10 @@ from sqlmodel import Field, Index, Relationship, SQLModel, UniqueConstraint
 from pydantic import field_validator, EmailStr
 import enum
 
-class Role(str, enum.Enum):
-    """User roles for access control."""
-    ADMIN = "admin"
-    EDITOR = "editor"
-    VIEWER = "viewer"
+class SystemRole(str, enum.Enum):
+    SUPERADMIN = "superadmin"
+    USER = "user"
+    SUSPENDED = "suspended"
 
 class UserBase(SQLModel):
     """
@@ -18,7 +17,7 @@ class UserBase(SQLModel):
     last_name: str = Field(max_length=50)
     username: str = Field(index=True, unique=True, description="Unique username for the user")
     email: EmailStr = Field(index=True, unique=True, description="User's email address")
-    role: Role = Field(default=Role.VIEWER)    
+    system_role: SystemRole = Field(default=SystemRole.USER, description="System-wide role for the user")   
     restaurant_id: int | None = Field(default=None, foreign_key="restaurant.id", index=True)
 
     @field_validator('username')
@@ -45,6 +44,7 @@ class User(UserBase, table=True):
     ) 
 
     restaurant: "Restaurant" = Relationship(back_populates="users") 
+    memberships: list["Membership"] = Relationship(back_populates="user")
 
 class UserCreate(UserBase):
     """Model for creating a new user."""
@@ -67,7 +67,7 @@ class UserCreate(UserBase):
 class UserRead(UserBase):
     """Model for reading user data."""
     id: int
-    role: Role
+    role: SystemRole
     restaurant_id: int | None
 
 class UserUpdate(SQLModel):
@@ -76,7 +76,7 @@ class UserUpdate(SQLModel):
     last_name: str | None = None
     username: str | None = None
     email: str | None = None
-    role: Role | None = None
+    role: SystemRole | None = None
     password: str | None = None
     restaurant_id: int | None = None
 

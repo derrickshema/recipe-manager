@@ -1,6 +1,9 @@
 from sqlmodel import Session, select
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from ..models.membership import OrgRole
+from ..utilities.users_utils import require_org_roles
+
 from ..models.user import User
 from .auth_routes import get_current_user
 
@@ -9,7 +12,7 @@ from ..models.recipe import Recipe, RecipeCreate, RecipeRead, RecipeUpdate
 router = APIRouter(prefix="/recipes", tags=["Recipes"])
 
 @router.post("/", response_model=Recipe, status_code=status.HTTP_201_CREATED)
-async def create_student(student: RecipeCreate, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+async def create_student(student: RecipeCreate, session: Session = Depends(get_session), current_user: User = Depends(require_org_roles(OrgRole.EMPLOYEE))):
     """
     Creates a new recipe in the database.
     """
@@ -38,7 +41,7 @@ async def get_student(recipe_id: int, session: Session = Depends(get_session), c
     return recipe
 
 @router.put("/{recipe_id}", response_model=Recipe)
-async def update_student(recipe_id: int, updated_student: RecipeUpdate, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+async def update_student(recipe_id: int, updated_student: RecipeUpdate, session: Session = Depends(get_session), current_user: User = Depends(require_org_roles(OrgRole.EMPLOYEE))):
     """
     Updates a recipe's information in the database.
     """
@@ -55,7 +58,7 @@ async def update_student(recipe_id: int, updated_student: RecipeUpdate, session:
     return existing_recipe
 
 @router.delete("/{recipe_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_student(recipe_id: int, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+async def delete_student(recipe_id: int, session: Session = Depends(get_session), current_user: User = Depends(require_org_roles(OrgRole.EMPLOYEE))):
     """
     Deletes a student by ID from the database.
     """

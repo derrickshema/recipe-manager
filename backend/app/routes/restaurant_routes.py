@@ -1,16 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
+from ..models.membership import OrgRole
+
+from ..utilities.users_utils import require_org_roles, require_system_roles
+
 from ..db.session import get_session
 from ..models.restaurant import Restaurant, RestaurantCreate, RestaurantUpdate
-from ..models.user import User
+from ..models.user import SystemRole, User
 from ..routes.auth_routes import get_current_user
 
 
 router = APIRouter(prefix="/restaurants", tags=["Restaurants"])
 
 @router.post("/", response_model=Restaurant, status_code=status.HTTP_201_CREATED)
-async def create_restaurant(restaurant: RestaurantCreate, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+async def create_restaurant(restaurant: RestaurantCreate, session: Session = Depends(get_session), current_user: User = Depends(require_system_roles(SystemRole.SUPERADMIN))):
     """
     Creates a new restaurant in the database.
     """
@@ -39,7 +43,7 @@ async def get_restaurant(restaurant_id: int, session: Session = Depends(get_sess
     return restaurant
 
 @router.put("/{restaurant_id}", response_model=Restaurant)
-async def update_restaurant(restaurant_id: int, updated_restaurant: RestaurantUpdate, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+async def update_restaurant(restaurant_id: int, updated_restaurant: RestaurantUpdate, session: Session = Depends(get_session), current_user: User = Depends(require_org_roles(OrgRole.RESTAURANT_ADMIN))):
     """
     Updates a restaurant's information in the database.
     """
@@ -56,7 +60,7 @@ async def update_restaurant(restaurant_id: int, updated_restaurant: RestaurantUp
     return existing_restaurant
 
 @router.delete("/{restaurant_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_restaurant(restaurant_id: int, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+async def delete_restaurant(restaurant_id: int, session: Session = Depends(get_session), current_user: User = Depends(require_system_roles(SystemRole.SUPERADMIN))):
     """
     Deletes a restaurant by ID from the database.
     """

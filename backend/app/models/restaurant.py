@@ -12,6 +12,7 @@ class Restaurant(RestaurantBase, table=True):
 
     users: list["User"] = Relationship(back_populates="restaurant")
     recipes: list["Recipe"] = Relationship(back_populates="restaurant")
+    memberships: list["Membership"] = Relationship(back_populates="restaurant")
 
 class RestaurantCreate(RestaurantBase):
     pass

@@ -1,44 +1,16 @@
 # auth_routes.py
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
 import os
-from ..db.session import get_session
-from ..models.user import User, UserCreate, UserLogin, UserRead, Token # Import new models
-from ..utilities.auth_utils import verify_password, hash_password, create_access_token, decode_access_token
 
-# Initialize OAuth2PasswordBearer
-# tokenUrl specifies the endpoint where clients can obtain a token (login)
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
+from ..utilities.users_utils import get_current_user
+from ..db.session import get_session
+from ..models.user import User, UserCreate, UserRead, Token # Import new models
+from ..utilities.auth_utils import verify_password, hash_password, create_access_token
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
-
-# --- Dependency to get the current authenticated user ---
-async def get_current_user(token: str = Depends(oauth2_scheme), session: Session = Depends(get_session)) -> User:
-    """
-    Dependency function to get the current authenticated user from a JWT token.
-    This function will be used in protected routes.
-    """
-    payload = decode_access_token(token) # Decodes and validates the token
-    username: str = payload.get("sub") # Get the 'sub' (subject) claim, which is our username
-
-    if username is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    # Fetch the user from the database
-    user = session.exec(select(User).where(User.username == username)).first()
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found in database",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return user
 
 # --- User Registration Endpoint ---
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
@@ -77,14 +49,14 @@ async def register_user(user_in: UserCreate, session: Session = Depends(get_sess
 # --- Login Endpoint ---
 @router.post("/token", response_model=Token)
 async def login_for_access_token(
-    login: UserLogin,
+    form_data: OAuth2PasswordRequestForm = Depends(),
     session: Session = Depends(get_session)
 ):
     """
     Authenticates a user and returns a JWT access token.
     """
-    user = session.exec(select(User).where(User.username == login.username)).first()
-    if not user or not verify_password(login.password, user.hashed_password):
+    user = session.exec(select(User).where(User.username == form_data.username)).first()
+    if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
