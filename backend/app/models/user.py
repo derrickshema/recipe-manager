@@ -17,7 +17,7 @@ class UserBase(SQLModel):
     last_name: str = Field(max_length=50)
     username: str = Field(index=True, unique=True, description="Unique username for the user")
     email: EmailStr = Field(index=True, unique=True, description="User's email address")
-    system_role: SystemRole = Field(
+    role: SystemRole = Field(
         default=SystemRole.USER,
         sa_column=Column(Enum(SystemRole, name="system_role", create_type=True)),
         description="System-wide role for the user"
