@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 import re
-from sqlmodel import Field, Index, Relationship, SQLModel, UniqueConstraint
+from sqlmodel import Column, Field, Relationship, SQLModel, Enum
 from pydantic import field_validator, EmailStr
 import enum
 
@@ -17,7 +17,11 @@ class UserBase(SQLModel):
     last_name: str = Field(max_length=50)
     username: str = Field(index=True, unique=True, description="Unique username for the user")
     email: EmailStr = Field(index=True, unique=True, description="User's email address")
-    system_role: SystemRole = Field(default=SystemRole.USER, description="System-wide role for the user")   
+    system_role: SystemRole = Field(
+        default=SystemRole.USER,
+        sa_column=Column(Enum(SystemRole, name="system_role", create_type=True)),
+        description="System-wide role for the user"
+    )   
     restaurant_id: int | None = Field(default=None, foreign_key="restaurant.id", index=True)
 
     @field_validator('username')
