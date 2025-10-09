@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from sqlmodel import Field, Relationship, SQLModel
+from .membership import Membership
 
 
 class RestaurantBase(SQLModel):
@@ -13,7 +14,6 @@ class Restaurant(RestaurantBase, table=True):
         sa_column_kwargs={"onupdate": lambda: datetime.now(timezone.utc)}
     )
 
-    users: list["User"] = Relationship(back_populates="restaurant")
     recipes: list["Recipe"] = Relationship(back_populates="restaurant")
     memberships: list["Membership"] = Relationship(back_populates="restaurant")
 

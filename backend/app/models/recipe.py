@@ -1,7 +1,10 @@
 from datetime import datetime, timezone
-from typing import List
+from typing import List, TYPE_CHECKING
 
 from sqlmodel import JSON, Column, Field, Relationship, SQLModel
+
+if TYPE_CHECKING:
+    from .restaurant import Restaurant
 
 
 
@@ -13,10 +16,10 @@ class RecipeBase(SQLModel):
     prep_time: int | None = None  # in minutes
     cook_time: int | None = None  # in minutes
     servings: int | None = None
-    restaurant_id: int = Field(foreign_key="restaurant.id")
 
 class Recipe(RecipeBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
+    restaurant_id: int = Field(foreign_key="restaurant.id")  # Required field in the table
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),

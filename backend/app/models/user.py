@@ -3,6 +3,8 @@ import re
 from sqlmodel import Column, Field, Relationship, SQLModel, Enum
 from pydantic import field_validator, EmailStr
 import enum
+from typing import Optional
+from .membership import OrgRole, Membership
 
 class SystemRole(str, enum.Enum):
     SUPERADMIN = "superadmin"
@@ -21,8 +23,7 @@ class UserBase(SQLModel):
         default=SystemRole.USER,
         sa_column=Column(Enum(SystemRole, name="system_role", create_type=True)),
         description="System-wide role for the user"
-    )   
-    restaurant_id: int | None = Field(default=None, foreign_key="restaurant.id", index=True)
+    )
 
     @field_validator('username')
     def validate_username(cls, v):
@@ -47,12 +48,13 @@ class User(UserBase, table=True):
         sa_column_kwargs={"onupdate": lambda: datetime.now(timezone.utc)}
     ) 
 
-    restaurant: "Restaurant" = Relationship(back_populates="users") 
     memberships: list["Membership"] = Relationship(back_populates="user")
 
 class UserCreate(UserBase):
     """Model for creating a new user."""
     password: str
+    org_role: Optional[OrgRole] = None  # Optional org role for initial membership
+    restaurant_id: Optional[int] = None  # Optional restaurant ID for initial membership
 
     @field_validator('password')
     def validate_password(cls, v):
@@ -72,17 +74,15 @@ class UserRead(UserBase):
     """Model for reading user data."""
     id: int
     role: SystemRole
-    restaurant_id: int | None
 
 class UserUpdate(SQLModel):
     """Model for updating user data."""
-    first_name: str | None = None
-    last_name: str | None = None
-    username: str | None = None
-    email: str | None = None
-    role: SystemRole | None = None
-    password: str | None = None
-    restaurant_id: int | None = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    username: Optional[str] = None
+    email: Optional[str] = None
+    role: Optional[SystemRole] = None
+    password: Optional[str] = None
 
 class UserLogin(SQLModel):
     """Model for user login."""

@@ -7,7 +7,8 @@ import os
 
 from ..utilities.users_utils import get_current_user
 from ..db.session import get_session
-from ..models.user import User, UserCreate, UserRead, Token # Import new models
+from ..models.user import User, UserCreate, UserRead, Token, SystemRole
+from ..models.membership import Membership, OrgRole
 from ..utilities.auth_utils import verify_password, hash_password, create_access_token
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -16,7 +17,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 async def register_user(user_in: UserCreate, session: Session = Depends(get_session)):
     """
-    Registers a new user.
+    Registers a new user with both system role and optional organization role.
     """
     # Check if username already exists
     existing_user = session.exec(select(User).where(User.username == user_in.username)).first()
@@ -31,19 +32,34 @@ async def register_user(user_in: UserCreate, session: Session = Depends(get_sess
 
     # Hash the password before storing
     hashed_password = hash_password(user_in.password)
+    
+    # Set default system role if not provided
+    system_role = user_in.role if user_in.role else SystemRole.USER
+    
     db_user = User(
-    username=user_in.username,
-    hashed_password=hashed_password,
-    email=user_in.email,
-    first_name=user_in.first_name,
-    last_name=user_in.last_name,
-    role=user_in.role,
-    restaurant_id=user_in.restaurant_id,
+        username=user_in.username,
+        hashed_password=hashed_password,
+        email=user_in.email,
+        first_name=user_in.first_name,
+        last_name=user_in.last_name,
+        role=system_role,
+        # Remove restaurant_id from User model as it will be handled through Membership
     )
 
     session.add(db_user)
     session.commit()
     session.refresh(db_user)
+
+    # If organization role and restaurant_id are provided, create a membership
+    if user_in.org_role and user_in.restaurant_id:
+        membership = Membership(
+            user_id=db_user.id,
+            restaurant_id=user_in.restaurant_id,
+            role=user_in.org_role
+        )
+        session.add(membership)
+        session.commit()
+
     return db_user
 
 # --- Login Endpoint ---
