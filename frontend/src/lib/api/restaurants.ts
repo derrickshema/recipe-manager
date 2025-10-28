@@ -14,12 +14,12 @@ export const restaurantApi = {
 
     // Create a new restaurant
     createRestaurant: async (restaurant: RestaurantCreate) => {
-        return api.post<RestaurantCreate>('/restaurants/', restaurant);
+        return api.post<Restaurant>('/restaurants/', restaurant);
     },
 
     // Update a restaurant
     updateRestaurant: async (id: number, restaurant: RestaurantUpdate) => {
-        return api.put<RestaurantUpdate>(`/restaurants/${id}`, restaurant);
+        return api.put<Restaurant>(`/restaurants/${id}`, restaurant);
     },
 
     // Delete a restaurant

@@ -14,12 +14,12 @@ export const recipeApi = {
 
     // Create a new recipe
     createRecipe: async (restaurantId: number, recipe: RecipeCreate) => {
-        return api.post<RecipeCreate>(`/recipes/?restaurant_id=${restaurantId}`, recipe);
+        return api.post<Recipe>(`/recipes/?restaurant_id=${restaurantId}`, recipe);
     },
 
     // Update a recipe
     updateRecipe: async (recipeId: number, restaurantId: number, recipe: RecipeUpdate) => {
-        return api.put<RecipeUpdate>(`/recipes/${recipeId}?restaurant_id=${restaurantId}`, recipe);
+        return api.put<Recipe>(`/recipes/${recipeId}?restaurant_id=${restaurantId}`, recipe);
     },
 
     // Delete a recipe

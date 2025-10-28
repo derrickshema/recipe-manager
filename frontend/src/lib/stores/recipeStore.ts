@@ -1,140 +1,140 @@
-import { writable, derived } from 'svelte/store';
-import type { Recipe } from '$lib/types/recipe';
-import { recipeApi } from '$lib/api/recipes';
+import { writable, derived, type Writable } from 'svelte/store';
+import type { Recipe, RecipeCreate } from '$lib/types/recipe';
+import { recipeApi } from '$lib/api/recipes'; // Assuming this API layer is defined
+
+// --- 1. State Definition ---
 
 interface RecipeStore {
-    recipes: Record<number, Recipe[]>;  // Keyed by restaurant_id
+    recipes: Record<number, Recipe[]>; // Keyed by restaurant_id for caching
     loading: boolean;
     error: string | null;
     currentRecipe: Recipe | null;
 }
 
-function createRecipeStore() {
-    const initialState: RecipeStore = {
-        recipes: {},
-        loading: false,
-        error: null,
-        currentRecipe: null
-    };
+const initialState: RecipeStore = {
+    recipes: {},
+    loading: false,
+    error: null,
+    currentRecipe: null
+};
 
+// --- 2. Internal Helper Function for Error Handling ---
+
+/**
+ * Executes an async function, setting loading/error states around the execution.
+ * @param store The writable store instance.
+ * @param fn The asynchronous action to execute (which updates the state).
+ * @param errorMsg The default error message.
+ */
+async function handleAsyncUpdate<T>(
+    store: Writable<RecipeStore>,
+    fn: () => Promise<T>,
+    errorMsg: string
+): Promise<T | null> {
+    store.update(state => ({ ...state, loading: true, error: null }));
+    try {
+        const result = await fn();
+        store.update(state => ({ ...state, loading: false }));
+        return result;
+    } catch (error) {
+        store.update(state => ({
+            ...state,
+            error: error instanceof Error ? error.message : errorMsg,
+            loading: false
+        }));
+        // Re-throw the error so component logic can handle it if needed (e.g., toast notification)
+        throw error;
+    }
+}
+
+
+// --- 3. Store Factory ---
+
+function createRecipeStore() {
     const { subscribe, set, update } = writable<RecipeStore>(initialState);
 
+    // Function to simplify common state updates
+    const state = { subscribe, set, update };
+
     return {
-        subscribe,
+        ...state,
         
+        // --- CUD (Create, Update, Delete) Operations ---
+
         // Fetch recipes for a restaurant
         async fetchRecipes(restaurantId: number) {
-            update(state => ({ ...state, loading: true, error: null }));
-            try {
+            await handleAsyncUpdate(state, async () => {
                 const recipes = await recipeApi.getRecipes(restaurantId);
-                update(state => ({
-                    ...state,
-                    recipes: { ...state.recipes, [restaurantId]: recipes },
-                    loading: false
+                update(s => ({
+                    ...s,
+                    recipes: { ...s.recipes, [restaurantId]: recipes }
                 }));
-            } catch (error) {
-                update(state => ({
-                    ...state,
-                    error: error instanceof Error ? error.message : 'Failed to fetch recipes',
-                    loading: false
-                }));
-            }
+            }, 'Failed to fetch recipes.');
         },
 
         // Fetch a single recipe
         async fetchRecipe(recipeId: number, restaurantId: number) {
-            update(state => ({ ...state, loading: true, error: null }));
-            try {
+            return await handleAsyncUpdate(state, async () => {
                 const recipe = await recipeApi.getRecipe(recipeId, restaurantId);
-                update(state => ({
-                    ...state,
-                    currentRecipe: recipe,
-                    loading: false
-                }));
+                update(s => ({ ...s, currentRecipe: recipe }));
                 return recipe;
-            } catch (error) {
-                update(state => ({
-                    ...state,
-                    error: error instanceof Error ? error.message : 'Failed to fetch recipe',
-                    loading: false
-                }));
-                throw error;
-            }
+            }, 'Failed to fetch recipe.');
         },
 
         // Create a new recipe
-        async createRecipe(restaurantId: number, recipe: Omit<Recipe, 'id' | 'created_at' | 'updated_at' | 'restaurant_id'>) {
-            update(state => ({ ...state, loading: true, error: null }));
-            try {
+        async createRecipe(restaurantId: number, recipe: RecipeCreate) {
+            return await handleAsyncUpdate(state, async () => {
                 const newRecipe = await recipeApi.createRecipe(restaurantId, recipe);
-                update(state => ({
-                    ...state,
+                update(s => ({
+                    ...s,
                     recipes: {
-                        ...state.recipes,
-                        [restaurantId]: [...(state.recipes[restaurantId] || []), newRecipe]
-                    },
-                    loading: false
+                        ...s.recipes,
+                        [restaurantId]: [...(s.recipes[restaurantId] || []), newRecipe]
+                    }
                 }));
                 return newRecipe;
-            } catch (error) {
-                update(state => ({
-                    ...state,
-                    error: error instanceof Error ? error.message : 'Failed to create recipe',
-                    loading: false
-                }));
-                throw error;
-            }
+            }, 'Failed to create recipe.');
         },
 
         // Update a recipe
         async updateRecipe(recipeId: number, restaurantId: number, updates: Partial<Recipe>) {
-            update(state => ({ ...state, loading: true, error: null }));
-            try {
+            return await handleAsyncUpdate(state, async () => {
                 const updatedRecipe = await recipeApi.updateRecipe(recipeId, restaurantId, updates);
-                update(state => ({
-                    ...state,
-                    recipes: {
-                        ...state.recipes,
-                        [restaurantId]: state.recipes[restaurantId]?.map(recipe => 
-                            recipe.id === recipeId ? updatedRecipe : recipe
-                        ) || []
-                    },
-                    currentRecipe: updatedRecipe,
-                    loading: false
-                }));
+                update(s => {
+                    const updatedList = s.recipes[restaurantId]?.map(recipe => 
+                        recipe.id === recipeId ? updatedRecipe : recipe
+                    ) || [];
+                    
+                    return {
+                        ...s,
+                        recipes: { ...s.recipes, [restaurantId]: updatedList },
+                        currentRecipe: s.currentRecipe?.id === recipeId ? updatedRecipe : s.currentRecipe,
+                    };
+                });
                 return updatedRecipe;
-            } catch (error) {
-                update(state => ({
-                    ...state,
-                    error: error instanceof Error ? error.message : 'Failed to update recipe',
-                    loading: false
-                }));
-                throw error;
-            }
+            }, 'Failed to update recipe.');
         },
 
         // Delete a recipe
         async deleteRecipe(recipeId: number, restaurantId: number) {
-            update(state => ({ ...state, loading: true, error: null }));
-            try {
+            await handleAsyncUpdate(state, async () => {
                 await recipeApi.deleteRecipe(recipeId, restaurantId);
-                update(state => ({
-                    ...state,
+                update(s => ({
+                    ...s,
                     recipes: {
-                        ...state.recipes,
-                        [restaurantId]: state.recipes[restaurantId]?.filter(recipe => recipe.id !== recipeId) || []
+                        ...s.recipes,
+                        [restaurantId]: s.recipes[restaurantId]?.filter(recipe => recipe.id !== recipeId) || []
                     },
-                    currentRecipe: null,
-                    loading: false
+                    currentRecipe: s.currentRecipe?.id === recipeId ? null : s.currentRecipe,
                 }));
-            } catch (error) {
-                update(state => ({
-                    ...state,
-                    error: error instanceof Error ? error.message : 'Failed to delete recipe',
-                    loading: false
-                }));
-                throw error;
-            }
+            }, 'Failed to delete recipe.');
+        },
+
+        // --- Utility Methods ---
+
+        // NEW: Allows setting the current recipe state directly (or clearing it)
+        setCurrentRecipe(recipe: Recipe | null) {
+            update(s => ({ ...s, currentRecipe: recipe }));
         },
 
         // Reset store
@@ -146,7 +146,8 @@ function createRecipeStore() {
 
 export const recipeStore = createRecipeStore();
 
-// Derived stores for convenience
+// --- 4. Derived Stores for Convenience ---
+
 export const recipes = derived(recipeStore, $store => $store.recipes);
 export const currentRecipe = derived(recipeStore, $store => $store.currentRecipe);
 export const isLoading = derived(recipeStore, $store => $store.loading);
