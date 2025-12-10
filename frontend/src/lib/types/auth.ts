@@ -1,33 +1,28 @@
-import type { SystemRole } from './roles';
+import type { SystemRole, OrgRole } from './roles';
 
 export interface AuthUser {
     id: string;
     email: string;
+    username: string;
     first_name: string;
     last_name: string;
-    role: SystemRole;
+    role?: SystemRole; // Optional: defaults to SystemRole.USER
+    org_role?: OrgRole;
     restaurant_id?: string;
     isAuthenticated: boolean;
 }
 
-/**
- * Data required for user login
- */
-export interface UserLogin {
-    username: string;
+export interface LoginCredentials {
+    email: string;
     password: string;
 }
 
-/**
- * Data required for user registration
- */
-export interface UserRegister {
-    username: string;
+export interface RegisterData {
     email: string;
+    username: string;
     password: string;
     first_name: string;
     last_name: string;
-    role?: SystemRole;          // Optional: defaults to SystemRole.USER
 }
 
 /**
