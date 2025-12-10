@@ -3,6 +3,7 @@
  */
 export enum SystemRole {
     SUPERADMIN = "superadmin",
+    CUSTOMER = "customer",
     USER = "user",
     SUSPENDED = "suspended"
 }
@@ -12,8 +13,7 @@ export enum SystemRole {
  */
 export enum OrgRole {
     RESTAURANT_ADMIN = "restaurant_admin",
-    EMPLOYEE = "employee",
-    VIEWER = "viewer"
+    EMPLOYEE = "employee"
 }
 
 // Type guard to check if a string is a valid SystemRole

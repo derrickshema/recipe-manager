@@ -1,5 +1,4 @@
 import { goto } from '$app/navigation';
-import { user, isAuthenticated } from '$lib/stores/authStore';
 
 // API Configuration: ensures consistent settings for all requests
 const API_CONFIG = {
@@ -31,7 +30,7 @@ export async function apiFetch(
 ): Promise<Response> {
     const { data, params, ...customOptions } = config;
 
-    // Construct URL with API base
+    // Construct URL with API base: new URL is a standard safe way to build URLs
     const url = new URL(`${API_CONFIG.baseUrl}${path}`);
 
     // Feature Use: Append URL query parameters from 'params'
@@ -44,10 +43,17 @@ export async function apiFetch(
     // Prepare headers: Start with defaults, then allow them to be overridden by customOptions.headers
     const headers = {
         ...API_CONFIG.defaultHeaders,
-        // CRITICAL FIX: Add Content-Type here, allowing it to be overridden if needed
         'Content-Type': 'application/json', 
         ...customOptions.headers,
-    };
+    } as Record<string, string>;
+
+    // Add Authorization header if token exists (OAuth2 Bearer token)
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+    }
 
     // Prepare body: stringify the data if it exists
     const body = (data && method !== 'GET') ? JSON.stringify(data) : undefined;
@@ -66,8 +72,10 @@ export async function apiFetch(
 
     // Handle authentication errors
     if (response.status === 401) {
-        user.signOut();
-        isAuthenticated.setFalse();
+        // Clear token and redirect to login
+        if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem('access_token');
+        }
         goto('/login');
     }
 

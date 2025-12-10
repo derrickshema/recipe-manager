@@ -1,9 +1,15 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { isAuthenticated, user } from '$lib/stores/authStore';
+	import { goto } from '$app/navigation';
+	import { isAuthenticated, user, authStore } from '$lib/stores/authStore';
 	import { SystemRole } from '$lib/types/roles';
 
 	export let showNav = true;
+	
+	async function handleLogout() {
+		await authStore.signOut();
+		goto('/login');
+	}
 </script>
 
 <div class="min-h-screen flex flex-col">
@@ -23,9 +29,9 @@
 						</a>
 						{#if $user?.role === SystemRole.SUPERADMIN}
 							<a
-								href="/admin"
+								href="/admin/dashboard"
 								class="text-sm font-medium transition-colors hover:text-primary"
-								class:active={page.url.pathname.startsWith('/admin')}
+								class:active={String(page.url.pathname).startsWith('/admin')}
 							>
 								Admin
 							</a>
@@ -34,7 +40,7 @@
 							<span class="text-sm">{$user?.first_name} {$user?.last_name}</span>
 							<button
 								class="text-sm font-medium text-destructive hover:text-destructive/90"
-								on:click={() => {/* Add logout handler */}}
+								onclick={handleLogout}
 							>
 								Logout
 							</button>
@@ -43,14 +49,14 @@
 						<a
 							href="/login"
 							class="text-sm font-medium transition-colors hover:text-primary"
-							class:active={page.url.pathname === '/login'}
+							class:active={String(page.url.pathname) === '/login'}
 						>
 							Login
 						</a>
 						<a
 							href="/register"
 							class="text-sm font-medium transition-colors hover:text-primary"
-							class:active={page.url.pathname === '/register'}
+							class:active={String(page.url.pathname) === '/register'}
 						>
 							Register
 						</a>

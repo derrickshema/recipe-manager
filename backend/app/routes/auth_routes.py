@@ -65,14 +65,24 @@ async def register_user(user_in: UserCreate, session: Session = Depends(get_sess
 # --- Login Endpoint ---
 @router.post("/token", response_model=Token)
 async def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(),
+    credentials: dict,
     session: Session = Depends(get_session)
 ):
     """
     Authenticates a user and returns a JWT access token.
+    Accepts JSON: {"username": "...", "password": "..."}
     """
-    user = session.exec(select(User).where(User.username == form_data.username)).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    username = credentials.get("username")
+    password = credentials.get("password")
+    
+    if not username or not password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username and password are required"
+        )
+    
+    user = session.exec(select(User).where(User.username == username)).first()
+    if not user or not verify_password(password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",

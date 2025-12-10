@@ -6,7 +6,6 @@ from sqlmodel import Field, Relationship, SQLModel
 class OrgRole(str, enum.Enum):
     RESTAURANT_ADMIN = "restaurant_admin"
     EMPLOYEE = "employee"
-    VIEWER = "viewer"
 
 class Membership(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)

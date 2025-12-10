@@ -1,14 +1,14 @@
-import type { AuthUser, LoginResponse, RegisterResponse, UserLogin, UserRegister } from '$lib/types/auth';
+import type { AuthUser, LoginResponse, RegisterResponse } from '$lib/types/auth';
 import { api } from '$lib/utils/apiHelpers';
 
 export const authApi = {
-    // Login user
-    login: async (credentials: UserLogin) => {
-        return api.post<LoginResponse>('/auth/token', credentials, { auth: false });
+    // Login user - sends JSON credentials
+    login: async (credentials: { username: string; password: string }) => {
+        return api.post<{ access_token: string; token_type: string }>('/auth/token', credentials, { auth: false });
     },
 
     // Register new user
-    register: async (userData: UserRegister) => {
+    register: async (userData: unknown) => {
         return api.post<RegisterResponse>('/auth/register', userData, { auth: false });
     },
 

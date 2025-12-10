@@ -6,6 +6,7 @@ const PROTECTED_ROUTES = [
     '/dashboard',
     '/profile',
     '/recipes',
+    '/admin',
     // Add other protected routes here
 ];
 
