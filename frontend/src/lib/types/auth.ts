@@ -3,19 +3,27 @@ import type { SystemRole, OrgRole } from './roles';
 // ==================== Core User Types ====================
 
 /**
- * Authenticated user profile
- * Returned from /auth/me and stored in authStore
+ * User profile from backend
+ * Raw response from /auth/me endpoint
  */
-export interface AuthUser {
-    id: string;
+export interface UserProfile {
+    id: number;
     email: string;
     username: string;
     first_name: string;
     last_name: string;
-    role?: SystemRole;
-    org_role?: OrgRole;
-    restaurant_id?: string;
-    isAuthenticated: boolean;
+    role: SystemRole;
+}
+
+/**
+ * Authenticated user profile
+ * Returned from authService and stored in authStore
+ * Extends UserProfile with frontend-specific fields
+ */
+export interface AuthUser extends UserProfile {
+    org_role?: OrgRole;  // Optional: only for users with restaurant membership
+    restaurant_id?: number;  // Optional: derived from membership
+    isAuthenticated: boolean;  // Frontend-only field for state management
 }
 
 // ==================== Login Flow ====================

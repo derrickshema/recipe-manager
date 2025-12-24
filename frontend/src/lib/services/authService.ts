@@ -30,7 +30,11 @@ export const authService = {
         // Step 3: Fetch user profile using the token
         const userProfile = await authApi.getProfile();
         
-        return userProfile;
+        // Transform response to add frontend-specific fields
+        return {
+            ...userProfile,
+            isAuthenticated: true
+        };
     },
 
     /**
@@ -88,7 +92,12 @@ export const authService = {
         try {
             // Try to fetch user profile with existing token
             const profile = await authApi.getProfile();
-            return profile;
+            
+            // Transform response to add frontend-specific fields
+            return {
+                ...profile,
+                isAuthenticated: true
+            };
         } catch (error) {
             // Token is invalid or expired, clear it
             localStorage.removeItem('access_token');

@@ -2,16 +2,16 @@
 	import { Button } from '$lib/components';
 	import { isAuthenticated, user } from '$lib/stores/authStore';
 	import { goto } from '$app/navigation';
+	import { SystemRole } from '$lib/types';
 
 	// Redirect authenticated users based on role
 	$: if ($isAuthenticated && $user) {
-		const role = String($user.role).toLowerCase();
-		if (role === 'superadmin') {
+		if ($user.role === SystemRole.SUPERADMIN) {
 			goto('/system/overview');
-		} else if (role !== 'customer') {
+		} else if ($user.role === SystemRole.USER) {
 			goto('/restaurant/dashboard');
 		}
-		// Customers stay on this page to browse restaurants
+		// CUSTOMER role stays on this page to browse restaurants
 	}
 </script>
 

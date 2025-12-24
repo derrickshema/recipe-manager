@@ -8,6 +8,7 @@
 
 // ==================== Authentication Types ====================
 export type {
+    UserProfile,
     AuthUser,
     LoginRequest,
     LoginResponse,

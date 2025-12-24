@@ -3,6 +3,7 @@
 	import { AuthLayout } from '$lib/components/auth';
 	import { Button, TextField } from '$lib/components';
 	import { authStore } from '$lib/stores/authStore';
+	import { SystemRole } from '$lib/types';
 
 	let username = '';
 	let password = '';
@@ -22,10 +23,22 @@
 			const user = await authStore.login({ username, password });
 			
 			// Redirect based on user role
-			if (user?.role && user.role.toString().toLowerCase() === 'admin') {
-				goto('/system/overview');
+			if (user?.role) {
+				switch (user.role) {
+					case SystemRole.SUPERADMIN:
+						goto('/system/overview');
+						break;
+					case SystemRole.CUSTOMER:
+						goto('/');  // Customer home page
+						break;
+					case SystemRole.USER:
+						goto('/restaurant/dashboard');  // Restaurant staff
+						break;
+					default:
+						goto('/');
+				}
 			} else {
-				goto('/restaurant/dashboard');
+				goto('/');
 			}
 		} catch (err: any) {
 			if (err.status === 401) {

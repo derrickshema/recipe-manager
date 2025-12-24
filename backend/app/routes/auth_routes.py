@@ -7,7 +7,7 @@ import os
 
 from ..utilities.users_utils import get_current_user
 from ..db.session import get_session
-from ..models.user import User, UserCreate, UserRead, Token, SystemRole
+from ..models.user import User, UserCreate, UserRead, Token, SystemRole, UserLogin
 from ..models.membership import Membership, OrgRole
 from ..models.restaurant import Restaurant, RestaurantOwnerRegistration
 from ..utilities.auth_utils import verify_password, hash_password, create_access_token
@@ -124,21 +124,15 @@ async def register_restaurant_owner(
 # --- Login Endpoint ---
 @router.post("/token", response_model=Token)
 async def login_for_access_token(
-    credentials: dict,
+    credentials: UserLogin,
     session: Session = Depends(get_session)
 ):
     """
     Authenticates a user and returns a JWT access token.
     Accepts JSON: {"username": "...", "password": "..."}
     """
-    username = credentials.get("username")
-    password = credentials.get("password")
-    
-    if not username or not password:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username and password are required"
-        )
+    username = credentials.username
+    password = credentials.password
     
     user = session.exec(select(User).where(User.username == username)).first()
     if not user or not verify_password(password, user.hashed_password):

@@ -1,4 +1,5 @@
 import type {
+    UserProfile,
     AuthUser,
     LoginRequest,
     LoginResponse,
@@ -47,10 +48,10 @@ export const authApi = {
     /**
      * Get current user profile
      * Requires authentication
-     * @returns Current user profile
+     * @returns Current user profile from backend
      */
-    getProfile: async (): Promise<AuthUser> => {
-        return api.get<AuthUser>('/auth/me');
+    getProfile: async (): Promise<UserProfile> => {
+        return api.get<UserProfile>('/auth/me');
     },
 
     /**
@@ -58,8 +59,8 @@ export const authApi = {
      * @param updates - Profile fields to update
      * @returns Updated user profile
      */
-    updateProfile: async (updates: UpdateProfileRequest): Promise<AuthUser> => {
-        return api.put<AuthUser>('/auth/me', updates);
+    updateProfile: async (updates: UpdateProfileRequest): Promise<UserProfile> => {
+        return api.put<UserProfile>('/auth/me', updates);
     },
 
     /**

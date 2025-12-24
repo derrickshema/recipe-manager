@@ -47,8 +47,9 @@ export async function apiFetch(
         ...customHeaders,
     } as Record<string, string>;
 
-    // Add Authorization header if token exists (OAuth2 Bearer token)
-    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+    // Add Authorization header if token exists and auth is not explicitly disabled
+    const shouldIncludeAuth = config.auth !== false; // Default to true
+    if (shouldIncludeAuth && typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
         const token = localStorage.getItem('access_token');
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
@@ -77,6 +78,16 @@ export async function apiFetch(
             localStorage.removeItem('access_token');
         }
         goto('/login');
+        throw new Error('Unauthorized - redirecting to login');
+    }
+
+    // Handle other HTTP errors
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: response.statusText }));
+        const error = new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
+        (error as any).status = response.status;
+        (error as any).data = errorData;
+        throw error;
     }
 
     return response;
