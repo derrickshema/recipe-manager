@@ -1,32 +1,77 @@
-import type { AuthUser, LoginResponse, RegisterResponse } from '$lib/types/auth';
+import type {
+    AuthUser,
+    LoginRequest,
+    LoginResponse,
+    RegisterCustomerRequest,
+    RegisterRestaurantOwnerRequest,
+    RegisterResponse,
+    UpdateProfileRequest,
+    ChangePasswordRequest,
+    SuccessResponse
+} from '$lib/types';
 import { api } from '$lib/utils/apiHelpers';
 
+/**
+ * Authentication API Client
+ * Handles all authentication-related HTTP requests
+ */
 export const authApi = {
-    // Login user - sends JSON credentials
-    login: async (credentials: { username: string; password: string }) => {
-        return api.post<{ access_token: string; token_type: string }>('/auth/token', credentials, { auth: false });
+    /**
+     * Login user with credentials
+     * @param credentials - Username and password
+     * @returns Access token and token type
+     */
+    login: async (credentials: LoginRequest): Promise<LoginResponse> => {
+        return api.post<LoginResponse>('/auth/token', credentials, { auth: false });
     },
 
-    // Register new user
-    register: async (userData: unknown) => {
+    /**
+     * Register new customer user
+     * @param userData - Customer registration data
+     * @returns Created user profile
+     */
+    register: async (userData: RegisterCustomerRequest): Promise<RegisterResponse> => {
         return api.post<RegisterResponse>('/auth/register', userData, { auth: false });
     },
 
-    // Get current user profile
-    getProfile: async () => {
+    /**
+     * Register restaurant owner with restaurant details
+     * Creates user, restaurant, and membership atomically
+     * @param registrationData - Owner and restaurant information
+     * @returns Created user profile
+     */
+    registerRestaurantOwner: async (registrationData: RegisterRestaurantOwnerRequest): Promise<RegisterResponse> => {
+        return api.post<RegisterResponse>('/auth/register/restaurant-owner', registrationData, { auth: false });
+    },
+
+    /**
+     * Get current user profile
+     * Requires authentication
+     * @returns Current user profile
+     */
+    getProfile: async (): Promise<AuthUser> => {
         return api.get<AuthUser>('/auth/me');
     },
 
-    // Update user profile
-    updateProfile: async (updates: Partial<Omit<AuthUser, 'id' | 'role'>>) => {
+    /**
+     * Update user profile
+     * @param updates - Profile fields to update
+     * @returns Updated user profile
+     */
+    updateProfile: async (updates: UpdateProfileRequest): Promise<AuthUser> => {
         return api.put<AuthUser>('/auth/me', updates);
     },
 
-    // Change password
-    changePassword: async (oldPassword: string, newPassword: string) => {
-        return api.post<{ old_password: string; new_password: string }>(
+    /**
+     * Change user password
+     * @param oldPassword - Current password
+     * @param newPassword - New password
+     * @returns Success response
+     */
+    changePassword: async (oldPassword: string, newPassword: string): Promise<SuccessResponse> => {
+        return api.post<SuccessResponse>(
             '/auth/change-password',
-            { old_password: oldPassword, new_password: newPassword }
+            { old_password: oldPassword, new_password: newPassword } as ChangePasswordRequest
         );
     }
 };

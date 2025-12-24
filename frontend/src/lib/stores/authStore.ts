@@ -1,8 +1,13 @@
 import { writable, derived } from 'svelte/store';
 import { browser } from '$app/environment';
-import type { AuthUser } from '$lib/types/auth';
-import { authApi } from '$lib/api/auth';
+import type {
+    AuthUser,
+    LoginRequest,
+    RegisterCustomerRequest,
+    RegisterRestaurantOwnerRequest
+} from '$lib/types';
 import { handleAsyncStore } from '$lib/utils/storeHelpers';
+import { authService } from '$lib/services/authService';
 
 // --- 1. State Definition ---
 interface AuthState {
@@ -28,24 +33,17 @@ function createAuthStore() {
         set,
         update,
 
-        // Login user - OAuth2 flow
-        async login(credentials: { username: string; password: string }) {
+        /**
+         * Login user
+         * Delegates business logic to authService, manages state here
+         * @param credentials - Username and password
+         */
+        async login(credentials: LoginRequest) {
             return handleAsyncStore(
                 { subscribe, set, update },
                 async () => {
-                    // Step 1: Exchange credentials for access token
-                    const tokenResponse = await authApi.login(credentials);
+                    const userProfile = await authService.login(credentials);
                     
-                    // Step 2: Store token for future requests
-                    if (browser && tokenResponse.access_token) {
-                        localStorage.setItem('access_token', tokenResponse.access_token);
-                    }
-                    
-                    // Step 3: Fetch user profile using the token
-                    // (The token is automatically attached by apiClient now)
-                    const userProfile = await authApi.getProfile();
-                    
-                    // Step 4: Update store with user data
                     update(state => ({
                         ...state,
                         user: userProfile,
@@ -58,65 +56,87 @@ function createAuthStore() {
             );
         },
 
-        // Register new user
-        async register(data: { email: string; password: string; username: string; first_name: string; last_name: string }) {
+        /**
+         * Register new customer user
+         * Delegates business logic to authService, manages state here
+         * @param data - Customer registration data
+         */
+        async register(data: RegisterCustomerRequest) {
             return handleAsyncStore(
                 { subscribe, set, update },
                 async () => {
-                    await authApi.register(data);
-                    return store.login({
-                        username: data.username,
-                        password: data.password
-                    });
+                    const userProfile = await authService.register(data);
+                    
+                    update(state => ({
+                        ...state,
+                        user: userProfile,
+                        isAuthenticated: true
+                    }));
+                    
+                    return userProfile;
                 },
                 'Registration failed'
             );
         },
 
-        // Sign out user
+        /**
+         * Register restaurant owner with restaurant details
+         * Delegates business logic to authService, manages state here
+         * @param data - Owner and restaurant information
+         */
+        async registerRestaurantOwner(data: RegisterRestaurantOwnerRequest) {
+            return handleAsyncStore(
+                { subscribe, set, update },
+                async () => {
+                    const userProfile = await authService.registerRestaurantOwner(data);
+                    
+                    update(state => ({
+                        ...state,
+                        user: userProfile,
+                        isAuthenticated: true
+                    }));
+                    
+                    return userProfile;
+                },
+                'Restaurant registration failed'
+            );
+        },
+
+        /**
+         * Sign out user
+         * Delegates business logic to authService, manages state here
+         */
         async signOut() {
             return handleAsyncStore(
                 { subscribe, set, update },
                 async () => {
-                    // Clear stored token
-                    if (browser) {
-                        localStorage.removeItem('access_token');
-                    }
-                    
-                    // Reset auth state
+                    await authService.signOut();
                     update(() => initialState);
                 },
                 'Logout failed'
             );
         },
 
-        // Initialize auth state
+        /**
+         * Initialize auth state
+         * Checks for existing token and fetches user profile if valid
+         */
         async initialize() {
             if (!browser) return;
-            
-            // Check if we have a stored token
-            const token = localStorage.getItem('access_token');
-            if (!token) {
-                // No token, user is not logged in
-                update(() => initialState);
-                return;
-            }
             
             return handleAsyncStore(
                 { subscribe, set, update },
                 async () => {
-                    try {
-                        // Try to fetch user profile with existing token
-                        const profile = await authApi.getProfile();
+                    const profile = await authService.checkAuth();
+                    
+                    if (profile) {
                         update(state => ({
                             ...state,
                             user: profile,
                             isAuthenticated: true
                         }));
                         return profile;
-                    } catch (error) {
-                        // Token is invalid or expired, clear it
-                        localStorage.removeItem('access_token');
+                    } else {
                         update(() => initialState);
                         return null;
                     }
@@ -124,7 +144,9 @@ function createAuthStore() {
             );
         },
 
-        // Reset store to initial state
+        /**
+         * Reset store to initial state
+         */
         reset() {
             set(initialState);
         }

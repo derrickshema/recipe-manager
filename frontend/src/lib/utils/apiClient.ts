@@ -28,7 +28,7 @@ export async function apiFetch(
     method: HttpMethod,
     config: RequestConfig = {}
 ): Promise<Response> {
-    const { data, params, ...customOptions } = config;
+    const { data, params, headers: customHeaders, ...customOptions } = config;
 
     // Construct URL with API base: new URL is a standard safe way to build URLs
     const url = new URL(`${API_CONFIG.baseUrl}${path}`);
@@ -40,11 +40,11 @@ export async function apiFetch(
         });
     }
 
-    // Prepare headers: Start with defaults, then allow them to be overridden by customOptions.headers
+    // Prepare headers: Start with defaults, then allow them to be overridden by customHeaders
     const headers = {
         ...API_CONFIG.defaultHeaders,
         'Content-Type': 'application/json', 
-        ...customOptions.headers,
+        ...customHeaders,
     } as Record<string, string>;
 
     // Add Authorization header if token exists (OAuth2 Bearer token)

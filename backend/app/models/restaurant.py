@@ -1,6 +1,10 @@
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 from sqlmodel import Field, Relationship, SQLModel
 from .membership import Membership
+
+if TYPE_CHECKING:
+    from .recipe import Recipe
 
 
 class RestaurantBase(SQLModel):
@@ -28,5 +32,21 @@ class RestaurantRead(RestaurantBase):
 class RestaurantUpdate(SQLModel):
     restaurant_name: str | None = None
 
-
+class RestaurantOwnerRegistration(SQLModel):
+    """
+    Model for registering a restaurant owner with restaurant details.
+    Combines user creation, restaurant creation, and membership assignment.
+    """
+    # Owner Information
+    first_name: str = Field(max_length=50)
+    last_name: str = Field(max_length=50)
+    username: str
+    email: str
+    password: str
+    phone_number: str | None = None
     
+    # Restaurant Information
+    restaurant_name: str = Field(max_length=100)
+    cuisine_type: str | None = Field(default=None, max_length=50)
+    address: str | None = None
+    restaurant_phone: str | None = None

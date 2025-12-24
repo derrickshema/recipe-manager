@@ -9,6 +9,7 @@ from ..utilities.users_utils import get_current_user
 from ..db.session import get_session
 from ..models.user import User, UserCreate, UserRead, Token, SystemRole
 from ..models.membership import Membership, OrgRole
+from ..models.restaurant import Restaurant, RestaurantOwnerRegistration
 from ..utilities.auth_utils import verify_password, hash_password, create_access_token
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -33,8 +34,8 @@ async def register_user(user_in: UserCreate, session: Session = Depends(get_sess
     # Hash the password before storing
     hashed_password = hash_password(user_in.password)
     
-    # Set default system role if not provided
-    system_role = user_in.role if user_in.role else SystemRole.USER
+    # Set default system role if not provided (default to CUSTOMER for public registration)
+    system_role = user_in.role if user_in.role else SystemRole.CUSTOMER
     
     db_user = User(
         username=user_in.username,
@@ -60,6 +61,64 @@ async def register_user(user_in: UserCreate, session: Session = Depends(get_sess
         session.add(membership)
         session.commit()
 
+    return db_user
+
+# --- Restaurant Owner Registration Endpoint ---
+@router.post("/register/restaurant-owner", response_model=UserRead, status_code=status.HTTP_201_CREATED)
+async def register_restaurant_owner(
+    registration_data: RestaurantOwnerRegistration,
+    session: Session = Depends(get_session)
+):
+    """
+    Registers a new restaurant owner with restaurant details.
+    Creates: User (owner) + Restaurant + Membership (owner as restaurant_admin)
+    """
+    # Check if username already exists
+    existing_user = session.exec(select(User).where(User.username == registration_data.username)).first()
+    if existing_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already registered")
+
+    # Check if email already exists
+    existing_email_user = session.exec(select(User).where(User.email == registration_data.email)).first()
+    if existing_email_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+
+    # Hash the password
+    hashed_password = hash_password(registration_data.password)
+    
+    # Create the owner user account with USER system role
+    db_user = User(
+        username=registration_data.username,
+        hashed_password=hashed_password,
+        email=registration_data.email,
+        first_name=registration_data.first_name,
+        last_name=registration_data.last_name,
+        role=SystemRole.USER  # Restaurant owners get USER role
+    )
+    
+    session.add(db_user)
+    session.commit()
+    session.refresh(db_user)
+    
+    # Create the restaurant
+    db_restaurant = Restaurant(
+        restaurant_name=registration_data.restaurant_name
+    )
+    
+    session.add(db_restaurant)
+    session.commit()
+    session.refresh(db_restaurant)
+    
+    # Create membership linking owner to restaurant with RESTAURANT_ADMIN role
+    membership = Membership(
+        user_id=db_user.id,
+        restaurant_id=db_restaurant.id,
+        role=OrgRole.RESTAURANT_ADMIN
+    )
+    
+    session.add(membership)
+    session.commit()
+    
     return db_user
 
 # --- Login Endpoint ---

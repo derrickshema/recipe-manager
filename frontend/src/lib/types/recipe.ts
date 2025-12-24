@@ -1,3 +1,9 @@
+// ==================== Core Recipe Types ====================
+
+/**
+ * Complete recipe entity
+ * Returned from GET /recipes/{id}
+ */
 export interface Recipe {
     id: number;
     title: string;
@@ -12,7 +18,13 @@ export interface Recipe {
     restaurant_id: number;
 }
 
-export interface RecipeCreate {
+// ==================== Recipe Operations ====================
+
+/**
+ * Recipe creation request payload
+ * Sent to POST /recipes
+ */
+export interface RecipeCreateRequest {
     title: string;
     description?: string;
     ingredients: string[];
@@ -22,7 +34,11 @@ export interface RecipeCreate {
     servings?: number;
 }
 
-export interface RecipeUpdate {
+/**
+ * Recipe update request payload
+ * Sent to PUT /recipes/{id}
+ */
+export interface RecipeUpdateRequest {
     title?: string;
     description?: string;
     ingredients?: string[];
@@ -31,3 +47,16 @@ export interface RecipeUpdate {
     cook_time?: number;
     servings?: number;
 }
+
+/**
+ * Response from recipe list endpoint
+ * GET /recipes/?restaurant_id={id}
+ */
+export interface RecipeListResponse {
+    recipes: Recipe[];
+    total: number;
+}
+
+// Type aliases for backward compatibility
+export type RecipeCreate = RecipeCreateRequest;
+export type RecipeUpdate = RecipeUpdateRequest;

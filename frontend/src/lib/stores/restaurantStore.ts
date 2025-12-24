@@ -1,7 +1,12 @@
 import { writable, derived } from 'svelte/store';
-import type { Restaurant, Membership } from '$lib/types/restaurant';
-import { restaurantApi } from '$lib/api/restaurants';
+import type {
+    Restaurant,
+    RestaurantCreateRequest,
+    RestaurantUpdateRequest,
+    Membership
+} from '$lib/types';
 import { handleAsyncStore } from '$lib/utils/storeHelpers';
+import { restaurantService } from '$lib/services/restaurantService';
 
 // --- 1. State Definition ---
 interface RestaurantStore {
@@ -29,12 +34,15 @@ function createRestaurantStore() {
         set,
         update,
         
-        // Fetch all restaurants
+        /**
+         * Fetch all restaurants
+         * Delegates business logic to restaurantService, manages state here
+         */
         async fetchRestaurants() {
             return handleAsyncStore(
                 { subscribe, set, update },
                 async () => {
-                    const restaurants = await restaurantApi.getRestaurants();
+                    const restaurants = await restaurantService.fetchRestaurants();
                     update(state => ({
                         ...state,
                         restaurants
@@ -45,12 +53,15 @@ function createRestaurantStore() {
             );
         },
 
-        // Fetch a single restaurant
+        /**
+         * Fetch a single restaurant
+         * Delegates business logic to restaurantService, manages state here
+         */
         async fetchRestaurant(id: number) {
             return handleAsyncStore(
                 { subscribe, set, update },
                 async () => {
-                    const restaurant = await restaurantApi.getRestaurant(id);
+                    const restaurant = await restaurantService.fetchRestaurant(id);
                     update(state => ({
                         ...state,
                         currentRestaurant: restaurant
@@ -61,12 +72,16 @@ function createRestaurantStore() {
             );
         },
 
-        // Create a new restaurant
-        async createRestaurant(name: string) {
+        /**
+         * Create a new restaurant
+         * Delegates business logic to restaurantService, manages state here
+         * @param data - Restaurant data to create
+         */
+        async createRestaurant(data: RestaurantCreateRequest) {
             return handleAsyncStore(
                 { subscribe, set, update },
                 async () => {
-                    const newRestaurant = await restaurantApi.createRestaurant({ restaurant_name: name });
+                    const newRestaurant = await restaurantService.createRestaurant(data);
                     update(state => ({
                         ...state,
                         restaurants: [...state.restaurants, newRestaurant]
@@ -77,12 +92,17 @@ function createRestaurantStore() {
             );
         },
 
-        // Update a restaurant
-        async updateRestaurant(id: number, name: string) {
+        /**
+         * Update a restaurant
+         * Delegates business logic to restaurantService, manages state here
+         * @param id - Restaurant ID to update
+         * @param data - Restaurant fields to update
+         */
+        async updateRestaurant(id: number, data: RestaurantUpdateRequest) {
             return handleAsyncStore(
                 { subscribe, set, update },
                 async () => {
-                    const updatedRestaurant = await restaurantApi.updateRestaurant(id, { restaurant_name: name });
+                    const updatedRestaurant = await restaurantService.updateRestaurant(id, data);
                     update(state => ({
                         ...state,
                         restaurants: state.restaurants.map(restaurant => 
@@ -96,12 +116,15 @@ function createRestaurantStore() {
             );
         },
 
-        // Delete a restaurant
+        /**
+         * Delete a restaurant
+         * Delegates business logic to restaurantService, manages state here
+         */
         async deleteRestaurant(id: number) {
             return handleAsyncStore(
                 { subscribe, set, update },
                 async () => {
-                    await restaurantApi.deleteRestaurant(id);
+                    await restaurantService.deleteRestaurant(id);
                     update(state => ({
                         ...state,
                         restaurants: state.restaurants.filter(restaurant => restaurant.id !== id),
@@ -112,12 +135,15 @@ function createRestaurantStore() {
             );
         },
 
-        // Fetch memberships for a restaurant
+        /**
+         * Fetch memberships for a restaurant
+         * Delegates business logic to restaurantService, manages state here
+         */
         async fetchMemberships(restaurantId: number) {
             return handleAsyncStore(
                 { subscribe, set, update },
                 async () => {
-                    const memberships = await restaurantApi.getMemberships(restaurantId);
+                    const memberships = await restaurantService.fetchMemberships(restaurantId);
                     update(state => ({
                         ...state,
                         memberships: { ...state.memberships, [restaurantId]: memberships }
@@ -128,7 +154,9 @@ function createRestaurantStore() {
             );
         },
 
-        // Reset store
+        /**
+         * Reset store to initial state
+         */
         reset() {
             set(initialState);
         }
@@ -137,9 +165,10 @@ function createRestaurantStore() {
     return store;
 }
 
+// --- 3. Create and Export Store Instance ---
 export const restaurantStore = createRestaurantStore();
 
-// Derived stores for convenience
+// --- 4. Derived Stores for Convenience ---
 export const restaurants = derived(restaurantStore, $store => $store.restaurants);
 export const currentRestaurant = derived(restaurantStore, $store => $store.currentRestaurant);
 export const memberships = derived(restaurantStore, $store => $store.memberships);

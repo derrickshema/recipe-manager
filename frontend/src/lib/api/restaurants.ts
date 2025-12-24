@@ -1,55 +1,102 @@
-import type { Restaurant, RestaurantCreate, RestaurantUpdate, Membership } from '$lib/types/restaurant';
+import type {
+    Restaurant,
+    RestaurantCreateRequest,
+    RestaurantUpdateRequest,
+    Membership,
+    AddMemberRequest,
+    UpdateMembershipRequest,
+    OrgRole
+} from '$lib/types';
 import { api } from '$lib/utils/apiHelpers';
 
+/**
+ * Restaurant API Client
+ * Handles all restaurant-related HTTP requests
+ */
 export const restaurantApi = {
-    // Get all restaurants the user has access to
-    getRestaurants: async () => {
+    /**
+     * Get all restaurants the user has access to
+     * @returns Array of restaurants
+     */
+    getRestaurants: async (): Promise<Restaurant[]> => {
         return api.get<Restaurant[]>('/restaurants/');
     },
 
-    // Get a single restaurant
-    getRestaurant: async (id: number) => {
+    /**
+     * Get a single restaurant by ID
+     * @param id - Restaurant ID
+     * @returns Restaurant details
+     */
+    getRestaurant: async (id: number): Promise<Restaurant> => {
         return api.get<Restaurant>(`/restaurants/${id}`);
     },
 
-    // Create a new restaurant
-    createRestaurant: async (restaurant: RestaurantCreate) => {
+    /**
+     * Create a new restaurant
+     * @param restaurant - Restaurant data to create
+     * @returns Created restaurant
+     */
+    createRestaurant: async (restaurant: RestaurantCreateRequest): Promise<Restaurant> => {
         return api.post<Restaurant>('/restaurants/', restaurant);
     },
 
-    // Update a restaurant
-    updateRestaurant: async (id: number, restaurant: RestaurantUpdate) => {
+    /**
+     * Update an existing restaurant
+     * @param id - Restaurant ID to update
+     * @param restaurant - Restaurant data to update
+     * @returns Updated restaurant
+     */
+    updateRestaurant: async (id: number, restaurant: RestaurantUpdateRequest): Promise<Restaurant> => {
         return api.put<Restaurant>(`/restaurants/${id}`, restaurant);
     },
 
-    // Delete a restaurant
-    deleteRestaurant: async (id: number) => {
+    /**
+     * Delete a restaurant
+     * @param id - Restaurant ID to delete
+     */
+    deleteRestaurant: async (id: number): Promise<void> => {
         return api.delete(`/restaurants/${id}`);
     },
 
-    // Get restaurant memberships
-    getMemberships: async (restaurantId: number) => {
+    /**
+     * Get all memberships for a restaurant
+     * @param restaurantId - Restaurant ID
+     * @returns Array of memberships
+     */
+    getMemberships: async (restaurantId: number): Promise<Membership[]> => {
         return api.get<Membership[]>(`/restaurants/${restaurantId}/memberships`);
     },
 
-    // Add a member to restaurant
-    addMember: async (restaurantId: number, userId: number, role: string) => {
-        return api.post<{ user_id: number; role: string }>(
-            `/restaurants/${restaurantId}/memberships`,
-            { user_id: userId, role }
-        );
+    /**
+     * Add a member to a restaurant
+     * @param restaurantId - Restaurant ID
+     * @param userId - User ID to add
+     * @param role - Organization role to assign
+     * @returns Created membership
+     */
+    addMember: async (restaurantId: number, userId: number, role: OrgRole): Promise<Membership> => {
+        const request: AddMemberRequest = { user_id: userId, role };
+        return api.post<Membership>(`/restaurants/${restaurantId}/memberships`, request);
     },
 
-    // Update member role
-    updateMembership: async (restaurantId: number, membershipId: number, role: string) => {
-        return api.put<{ role: string }>(
-            `/restaurants/${restaurantId}/memberships/${membershipId}`,
-            { role }
-        );
+    /**
+     * Update a member's role
+     * @param restaurantId - Restaurant ID
+     * @param membershipId - Membership ID to update
+     * @param role - New organization role
+     * @returns Updated membership
+     */
+    updateMembership: async (restaurantId: number, membershipId: number, role: OrgRole): Promise<Membership> => {
+        const request: UpdateMembershipRequest = { role };
+        return api.put<Membership>(`/restaurants/${restaurantId}/memberships/${membershipId}`, request);
     },
 
-    // Remove a member from restaurant
-    removeMember: async (restaurantId: number, membershipId: number) => {
+    /**
+     * Remove a member from a restaurant
+     * @param restaurantId - Restaurant ID
+     * @param membershipId - Membership ID to remove
+     */
+    removeMember: async (restaurantId: number, membershipId: number): Promise<void> => {
         return api.delete(`/restaurants/${restaurantId}/memberships/${membershipId}`);
     }
 };

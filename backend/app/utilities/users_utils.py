@@ -132,5 +132,5 @@ def require_read_restaurant_access():
     """
     return require_org_or_system_roles(
         system_roles=[SystemRole.SUPERADMIN],
-        org_roles=[OrgRole.RESTAURANT_ADMIN, OrgRole.EMPLOYEE, OrgRole.VIEWER],
+        org_roles=[OrgRole.RESTAURANT_ADMIN, OrgRole.EMPLOYEE],
     )
