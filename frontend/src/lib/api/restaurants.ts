@@ -98,5 +98,42 @@ export const restaurantApi = {
      */
     removeMember: async (restaurantId: number, membershipId: number): Promise<void> => {
         return api.delete(`/restaurants/${restaurantId}/memberships/${membershipId}`);
+    },
+
+    // ==================== Admin Operations ====================
+
+    /**
+     * Get all pending restaurant registrations (Admin only)
+     * @returns Array of pending restaurants
+     */
+    getPendingRestaurants: async (): Promise<Restaurant[]> => {
+        return api.get<Restaurant[]>('/restaurants/admin/pending');
+    },
+
+    /**
+     * Approve a restaurant registration (Admin only)
+     * @param restaurantId - Restaurant ID to approve
+     * @returns Updated restaurant
+     */
+    approveRestaurant: async (restaurantId: number): Promise<Restaurant> => {
+        return api.post<Restaurant>(`/restaurants/${restaurantId}/approve`, {});
+    },
+
+    /**
+     * Reject a restaurant registration (Admin only)
+     * @param restaurantId - Restaurant ID to reject
+     * @returns Updated restaurant
+     */
+    rejectRestaurant: async (restaurantId: number): Promise<Restaurant> => {
+        return api.post<Restaurant>(`/restaurants/${restaurantId}/reject`, {});
+    },
+
+    /**
+     * Suspend a restaurant (Admin only)
+     * @param restaurantId - Restaurant ID to suspend
+     * @returns Updated restaurant
+     */
+    suspendRestaurant: async (restaurantId: number): Promise<Restaurant> => {
+        return api.post<Restaurant>(`/restaurants/${restaurantId}/suspend`, {});
     }
 };

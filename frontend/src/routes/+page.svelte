@@ -8,7 +8,7 @@
 	$: if ($isAuthenticated && $user) {
 		if ($user.role === SystemRole.SUPERADMIN) {
 			goto('/system/overview');
-		} else if ($user.role === SystemRole.USER) {
+		} else if ($user.role === SystemRole.RESTAURANT_OWNER) {
 			goto('/restaurant/dashboard');
 		}
 		// CUSTOMER role stays on this page to browse restaurants

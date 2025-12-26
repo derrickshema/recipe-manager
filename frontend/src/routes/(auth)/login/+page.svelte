@@ -28,12 +28,12 @@
 					case SystemRole.SUPERADMIN:
 						goto('/system/overview');
 						break;
-					case SystemRole.CUSTOMER:
-						goto('/');  // Customer home page
-						break;
-					case SystemRole.USER:
-						goto('/restaurant/dashboard');  // Restaurant staff
-						break;
+				case SystemRole.CUSTOMER:
+					goto('/');  // Customer home page
+					break;
+				case SystemRole.RESTAURANT_OWNER:
+					goto('/restaurant/dashboard');  // Restaurant staff
+					break;
 					default:
 						goto('/');
 				}

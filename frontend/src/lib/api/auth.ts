@@ -1,6 +1,5 @@
 import type {
     UserProfile,
-    AuthUser,
     LoginRequest,
     LoginResponse,
     RegisterCustomerRequest,

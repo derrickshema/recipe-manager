@@ -4,7 +4,7 @@
 export enum SystemRole {
     SUPERADMIN = "superadmin",
     CUSTOMER = "customer",
-    USER = "user",
+    RESTAURANT_OWNER = "restaurant_owner",
     SUSPENDED = "suspended"
 }
 

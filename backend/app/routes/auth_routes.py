@@ -93,7 +93,7 @@ async def register_restaurant_owner(
         email=registration_data.email,
         first_name=registration_data.first_name,
         last_name=registration_data.last_name,
-        role=SystemRole.USER  # Restaurant owners get USER role
+        role=SystemRole.RESTAURANT_OWNER  # Restaurant owners get RESTAURANT_OWNER role
     )
     
     session.add(db_user)

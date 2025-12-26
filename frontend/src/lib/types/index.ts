@@ -44,6 +44,7 @@ export type {
     RestaurantUpdate,
     OrgRole
 } from './restaurant';
+export { ApprovalStatus } from './restaurant';
 
 // ==================== Role Types ====================
 export { SystemRole } from './roles';

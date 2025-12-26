@@ -3,6 +3,16 @@ import type { OrgRole } from './roles';
 // ==================== Core Restaurant Types ====================
 
 /**
+ * Restaurant approval status enum
+ */
+export enum ApprovalStatus {
+    PENDING = "pending",
+    APPROVED = "approved",
+    REJECTED = "rejected",
+    SUSPENDED = "suspended"
+}
+
+/**
  * Complete restaurant entity
  * Returned from GET /restaurants/{id}
  */
@@ -12,6 +22,7 @@ export interface Restaurant {
     cuisine_type?: string;
     address?: string;
     phone?: string;
+    approval_status: ApprovalStatus;
     created_at: string;
     updated_at: string;
 }
@@ -38,6 +49,7 @@ export interface RestaurantUpdateRequest {
     cuisine_type?: string;
     address?: string;
     phone?: string;
+    approval_status?: ApprovalStatus;
 }
 
 /**

@@ -7,10 +7,10 @@ from typing import Optional
 from .membership import OrgRole, Membership
 
 class SystemRole(str, enum.Enum):
-    SUPERADMIN = "superadmin"  # App admin - manages restaurants, owners, employees, customers
-    CUSTOMER = "customer"       # End user who orders food from restaurants
-    USER = "user"               # Generic user (can be assigned restaurant roles via Membership)
-    SUSPENDED = "suspended"     # Account suspended
+    SUPERADMIN = "superadmin"        # App admin - manages restaurants, owners, employees, customers
+    CUSTOMER = "customer"            # End user who orders food from restaurants
+    RESTAURANT_OWNER = "restaurant_owner"  # Restaurant owner (can create/manage restaurants)
+    SUSPENDED = "suspended"          # Account suspended
 
 class UserBase(SQLModel):
     """

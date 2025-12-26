@@ -4,7 +4,7 @@ from sqlmodel import Session, select
 from ..utilities.users_utils import require_manage_restaurant_access, require_read_restaurant_access, require_restaurant_creation_access, require_system_roles
 
 from ..db.session import get_session
-from ..models.restaurant import Restaurant, RestaurantCreate, RestaurantUpdate
+from ..models.restaurant import Restaurant, RestaurantCreate, RestaurantUpdate, ApprovalStatus
 from ..models.user import SystemRole, User
 
 
@@ -68,3 +68,79 @@ async def delete_restaurant(restaurant_id: int, session: Session = Depends(get_s
     session.delete(restaurant)
     session.commit()
     return None
+
+
+# ==================== Admin Endpoints ====================
+
+@router.get("/admin/pending", response_model=list[Restaurant])
+async def get_pending_restaurants(
+    session: Session = Depends(get_session), 
+    current_user: User = Depends(require_system_roles(SystemRole.SUPERADMIN))
+):
+    """
+    Admin only: Get all restaurants awaiting approval.
+    """
+    restaurants = session.exec(
+        select(Restaurant).where(Restaurant.approval_status == ApprovalStatus.PENDING)
+    ).all()
+    return restaurants
+
+
+@router.post("/{restaurant_id}/approve", response_model=Restaurant)
+async def approve_restaurant(
+    restaurant_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(require_system_roles(SystemRole.SUPERADMIN))
+):
+    """
+    Admin only: Approve a restaurant registration.
+    """
+    restaurant = session.exec(select(Restaurant).where(Restaurant.id == restaurant_id)).first()
+    if not restaurant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Restaurant not found")
+    
+    restaurant.approval_status = ApprovalStatus.APPROVED
+    session.add(restaurant)
+    session.commit()
+    session.refresh(restaurant)
+    return restaurant
+
+
+@router.post("/{restaurant_id}/reject", response_model=Restaurant)
+async def reject_restaurant(
+    restaurant_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(require_system_roles(SystemRole.SUPERADMIN))
+):
+    """
+    Admin only: Reject a restaurant registration.
+    """
+    restaurant = session.exec(select(Restaurant).where(Restaurant.id == restaurant_id)).first()
+    if not restaurant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Restaurant not found")
+    
+    restaurant.approval_status = ApprovalStatus.REJECTED
+    session.add(restaurant)
+    session.commit()
+    session.refresh(restaurant)
+    return restaurant
+
+
+@router.post("/{restaurant_id}/suspend", response_model=Restaurant)
+async def suspend_restaurant(
+    restaurant_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(require_system_roles(SystemRole.SUPERADMIN))
+):
+    """
+    Admin only: Suspend a restaurant.
+    """
+    restaurant = session.exec(select(Restaurant).where(Restaurant.id == restaurant_id)).first()
+    if not restaurant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Restaurant not found")
+    
+    restaurant.approval_status = ApprovalStatus.SUSPENDED
+    session.add(restaurant)
+    session.commit()
+    session.refresh(restaurant)
+    return restaurant

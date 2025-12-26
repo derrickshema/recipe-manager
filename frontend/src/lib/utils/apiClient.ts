@@ -10,10 +10,11 @@ const API_CONFIG = {
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 // Request configuration type: to define options for API requests and serve as request blueprint 
-export interface RequestConfig<TBody = unknown> extends Omit<RequestInit, 'body' | 'method'> {
+export interface RequestConfig<TBody = unknown> extends Omit<RequestInit, 'body' | 'method' | 'headers'> {
     auth?: boolean;
     data?: TBody;
     params?: Record<string, string>;
+    headers?: Record<string, string>; // Custom headers to merge with defaults
 }
 
 /**
