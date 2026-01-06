@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from sqlmodel import SQLModel
 from .db.database import engine
-from .routes import recipe_routes, restaurant_routes, auth_routes
+from .routes import recipe_routes, restaurant_routes, auth_routes, admin_routes
 from fastapi.middleware.cors import CORSMiddleware
 
 async def lifespan(app: FastAPI):
@@ -25,3 +25,4 @@ app.add_middleware(
 app.include_router(auth_routes.router)
 app.include_router(restaurant_routes.router)
 app.include_router(recipe_routes.router)
+app.include_router(admin_routes.router)

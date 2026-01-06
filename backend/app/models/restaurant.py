@@ -2,10 +2,10 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 from sqlmodel import Field, Relationship, SQLModel
 import enum
-from .membership import Membership
 
 if TYPE_CHECKING:
     from .recipe import Recipe
+    from .membership import Membership
 
 
 class ApprovalStatus(str, enum.Enum):

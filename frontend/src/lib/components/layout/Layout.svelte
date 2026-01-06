@@ -14,32 +14,30 @@
 
 <div class="min-h-screen flex flex-col">
 	{#if showNav}
-		<header class="border-b">
+		<header class="border-b bg-white">
 			<div class="container mx-auto px-4 py-4 flex items-center justify-between">
-				<a href="/" class="text-xl font-bold">Recipe Manager</a>
+				<a href="/" class="text-xl font-bold hover:opacity-80 transition-opacity">Recipe Manager</a>
 
-				<nav class="flex items-center space-x-4">
+				<nav class="flex items-center gap-6">
 					{#if $isAuthenticated}
-						<a
-							href="/dashboard"
-							class="text-sm font-medium transition-colors hover:text-primary"
-							class:active={String(page.url.pathname) === '/dashboard'}
-						>
-							Dashboard
-						</a>
-						{#if $user?.role === SystemRole.SUPERADMIN}
-							<a
-								href="/admin/dashboard"
-								class="text-sm font-medium transition-colors hover:text-primary"
-								class:active={String(page.url.pathname).startsWith('/admin')}
-							>
-								Admin
-							</a>
-						{/if}
-						<div class="flex items-center space-x-2">
-							<span class="text-sm">{$user?.first_name} {$user?.last_name}</span>
+						<div class="flex items-center gap-4">
+							<!-- User Profile -->
+							<div class="flex items-center gap-3">
+								<!-- Avatar Circle -->
+								<div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+									<span class="text-sm font-semibold text-gray-700">
+										{$user?.first_name?.[0]}{$user?.last_name?.[0]}
+									</span>
+								</div>
+								<!-- User Name -->
+								<span class="text-sm font-medium text-gray-900">
+									{$user?.first_name} {$user?.last_name}
+								</span>
+							</div>
+							
+							<!-- Logout Button -->
 							<button
-								class="text-sm font-medium text-destructive hover:text-destructive/90"
+								class="px-4 py-2 text-sm font-medium rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
 								onclick={handleLogout}
 							>
 								Logout
@@ -55,10 +53,10 @@
 						</a>
 						<a
 							href="/register"
-							class="text-sm font-medium transition-colors hover:text-primary"
+							class="px-4 py-2 text-sm font-medium rounded-md bg-primary text-white hover:bg-primary/90 transition-colors"
 							class:active={String(page.url.pathname) === '/register'}
 						>
-							Register
+							Get Started
 						</a>
 					{/if}
 				</nav>

@@ -3,8 +3,12 @@ import re
 from sqlmodel import Column, Field, Relationship, SQLModel, Enum
 from pydantic import field_validator, EmailStr
 import enum
-from typing import Optional
-from .membership import OrgRole, Membership
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .membership import Membership
+
+from .membership import OrgRole
 
 class SystemRole(str, enum.Enum):
     SUPERADMIN = "superadmin"        # App admin - manages restaurants, owners, employees, customers

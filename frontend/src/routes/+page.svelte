@@ -10,8 +10,9 @@
 			goto('/system/overview');
 		} else if ($user.role === SystemRole.RESTAURANT_OWNER) {
 			goto('/restaurant/dashboard');
+		} else if ($user.role === SystemRole.CUSTOMER) {
+			goto('/customer/home');
 		}
-		// CUSTOMER role stays on this page to browse restaurants
 	}
 </script>
 
@@ -27,50 +28,45 @@
 		</p>
 
 		<div class="flex flex-col sm:flex-row gap-4">
-			{#if !$isAuthenticated}
-				<Button href="/register" size="lg">Get Started</Button>
-				<Button href="/login" variant="secondary" size="lg">Log In</Button>
-			{:else}
-				<div class="text-lg font-medium mb-4">
-					Welcome back, {$user?.first_name}! 👋
-				</div>
-			{/if}
+			<Button href="/register" size="lg">Get Started</Button>
+			<Button href="/login" variant="secondary" size="lg">Log In</Button>
 		</div>
 	</div>
 
-	<!-- Restaurant Listings Section -->
+	<!-- Features Section for Customers -->
 	<div class="py-16">
-		<h2 class="text-3xl font-bold mb-8 text-center">Browse Restaurants</h2>
+		<h2 class="text-3xl font-bold mb-8 text-center">Why Order With Us?</h2>
 		
-		<!-- Placeholder for restaurant listings -->
-		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-			<!-- Restaurant Card Placeholder -->
-			<div class="border rounded-lg p-6 hover:shadow-lg transition-shadow">
-				<div class="h-40 bg-muted rounded-lg mb-4"></div>
-				<h3 class="text-xl font-semibold mb-2">Restaurant Name</h3>
-				<p class="text-muted-foreground mb-4">Cuisine Type • $$ • 30-45 min</p>
-				<Button fullWidth>View Menu</Button>
+		<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+			<div class="flex flex-col items-center text-center p-6">
+				<div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+					<span class="text-3xl">🍔</span>
+				</div>
+				<h3 class="text-xl font-semibold mb-4">Wide Selection</h3>
+				<p class="text-muted-foreground">
+					Browse hundreds of restaurants and cuisines from the comfort of your home
+				</p>
 			</div>
 
-			<div class="border rounded-lg p-6 hover:shadow-lg transition-shadow">
-				<div class="h-40 bg-muted rounded-lg mb-4"></div>
-				<h3 class="text-xl font-semibold mb-2">Restaurant Name</h3>
-				<p class="text-muted-foreground mb-4">Cuisine Type • $$ • 30-45 min</p>
-				<Button fullWidth>View Menu</Button>
+			<div class="flex flex-col items-center text-center p-6">
+				<div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+					<span class="text-3xl">🚀</span>
+				</div>
+				<h3 class="text-xl font-semibold mb-4">Fast Delivery</h3>
+				<p class="text-muted-foreground">
+					Get your favorite meals delivered hot and fresh to your doorstep
+				</p>
 			</div>
 
-			<div class="border rounded-lg p-6 hover:shadow-lg transition-shadow">
-				<div class="h-40 bg-muted rounded-lg mb-4"></div>
-				<h3 class="text-xl font-semibold mb-2">Restaurant Name</h3>
-				<p class="text-muted-foreground mb-4">Cuisine Type • $$ • 30-45 min</p>
-				<Button fullWidth>View Menu</Button>
+			<div class="flex flex-col items-center text-center p-6">
+				<div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+					<span class="text-3xl">⭐</span>
+				</div>
+				<h3 class="text-xl font-semibold mb-4">Quality Guaranteed</h3>
+				<p class="text-muted-foreground">
+					Every restaurant is verified and rated by our community
+				</p>
 			</div>
-		</div>
-
-		<div class="text-center mt-8">
-			<p class="text-muted-foreground">
-				Restaurant listings will be populated here. This is a placeholder for the customer experience.
-			</p>
 		</div>
 	</div>
 

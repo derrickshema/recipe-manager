@@ -13,8 +13,8 @@ export const load: LayoutLoad = async () => {
 		throw redirect(302, '/login');
 	}
 
-	// Ensure user is a superadmin
-	if (currentUser?.role !== SystemRole.SUPERADMIN) {
+	// Ensure user is a customer
+	if (currentUser?.role !== SystemRole.CUSTOMER) {
 		throw redirect(302, '/');
 	}
 

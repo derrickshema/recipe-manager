@@ -26,13 +26,13 @@
 			if (user?.role) {
 				switch (user.role) {
 					case SystemRole.SUPERADMIN:
-						goto('/system/overview');
+						goto('/overview');
 						break;
 				case SystemRole.CUSTOMER:
-					goto('/');  // Customer home page
+					goto('/home');
 					break;
 				case SystemRole.RESTAURANT_OWNER:
-					goto('/restaurant/dashboard');  // Restaurant staff
+					goto('/dashboard');
 					break;
 					default:
 						goto('/');

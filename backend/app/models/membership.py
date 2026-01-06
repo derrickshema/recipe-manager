@@ -1,6 +1,11 @@
 import enum
+from typing import TYPE_CHECKING
 
 from sqlmodel import Field, Relationship, SQLModel
+
+if TYPE_CHECKING:
+    from .user import User
+    from .restaurant import Restaurant
 
 
 class OrgRole(str, enum.Enum):
