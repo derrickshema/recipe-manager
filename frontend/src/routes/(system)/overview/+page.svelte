@@ -10,19 +10,7 @@
         <div class="bg-card p-6 rounded-lg shadow">
             <h2 class="text-lg font-semibold mb-2">Restaurants</h2>
             <p class="text-muted-foreground">Manage restaurant registrations and access</p>
-            <a href="/system/restaurants" class="text-primary hover:underline mt-4 inline-block">View Restaurants →</a>
-        </div>
-
-        <div class="bg-card p-6 rounded-lg shadow">
-            <h2 class="text-lg font-semibold mb-2">Users</h2>
-            <p class="text-muted-foreground">Manage user accounts and permissions</p>
-            <a href="/system/users" class="text-primary hover:underline mt-4 inline-block">Manage Users →</a>
-        </div>
-
-        <div class="bg-card p-6 rounded-lg shadow">
-            <h2 class="text-lg font-semibold mb-2">Settings</h2>
-            <p class="text-muted-foreground">Configure system-wide settings</p>
-            <a href="/system/settings" class="text-primary hover:underline mt-4 inline-block">System Settings →</a>
+            <a href="/restaurants" class="text-primary hover:underline mt-4 inline-block">View Restaurants →</a>
         </div>
     </div>
 </div>

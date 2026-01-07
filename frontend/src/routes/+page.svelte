@@ -7,11 +7,11 @@
 	// Redirect authenticated users based on role
 	$: if ($isAuthenticated && $user) {
 		if ($user.role === SystemRole.SUPERADMIN) {
-			goto('/system/overview');
+			goto('/overview');
 		} else if ($user.role === SystemRole.RESTAURANT_OWNER) {
-			goto('/restaurant/dashboard');
+			goto('/dashboard');
 		} else if ($user.role === SystemRole.CUSTOMER) {
-			goto('/customer/home');
+			goto('/home');
 		}
 	}
 </script>
@@ -28,8 +28,12 @@
 		</p>
 
 		<div class="flex flex-col sm:flex-row gap-4">
-			<Button href="/register" size="lg">Get Started</Button>
-			<Button href="/login" variant="secondary" size="lg">Log In</Button>
+			<Button on:click={() => goto('/register')} size="lg" class="bg-blue-600 hover:bg-blue-700 text-white">
+				Get Started
+			</Button>
+			<Button on:click={() => goto('/login')} variant="secondary" size="lg" class="bg-gray-700 hover:bg-gray-800 text-white">
+				Log In
+			</Button>
 		</div>
 	</div>
 
@@ -77,7 +81,9 @@
 			<p class="text-xl text-muted-foreground mb-6">
 				Join our platform and reach thousands of hungry customers
 			</p>
-			<Button href="/register/restaurant" size="lg">List Your Restaurant</Button>
+			<Button on:click={() => goto('/register/restaurant')} size="lg" class="bg-green-600 hover:bg-green-700 text-white">
+				List Your Restaurant
+			</Button>
 		</div>
 
 		<div class="grid grid-cols-1 md:grid-cols-3 gap-8 px-6">
