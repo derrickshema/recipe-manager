@@ -15,6 +15,14 @@ import { api } from '$lib/utils/apiHelpers';
  */
 export const restaurantApi = {
     /**
+     * Get all restaurants the current user has membership to
+     * @returns Array of user's restaurants
+     */
+    getMyRestaurants: async (): Promise<Restaurant[]> => {
+        return api.get<Restaurant[]>('/restaurants/my');
+    },
+
+    /**
      * Get all restaurants the user has access to
      * @returns Array of restaurants
      */

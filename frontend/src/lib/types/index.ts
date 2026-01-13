@@ -42,10 +42,8 @@ export type {
     MembershipResponse,
     RestaurantCreate,
     RestaurantUpdate,
-    OrgRole
 } from './restaurant';
 export { ApprovalStatus } from './restaurant';
 
 // ==================== Role Types ====================
-export { SystemRole } from './roles';
-export type { OrgRole as OrgRoleEnum } from './roles';
+export { SystemRole, OrgRole } from './roles';

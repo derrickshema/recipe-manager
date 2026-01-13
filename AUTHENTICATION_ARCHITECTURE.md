@@ -103,6 +103,96 @@ COOKIE_SAMESITE = "lax"           # Prevents CSRF on cross-site requests
 - Automatic token refresh capability (can be added)
 - Secure cookie attributes
 
+## SSR Patterns for CRUD Operations
+
+### When to Use SSR (Form Actions)
+
+| Use Case | Why SSR |
+|----------|---------|
+| Create/Edit/Delete data | Mutations are more secure server-side |
+| Form submissions | Works without JavaScript (progressive enhancement) |
+| Initial page load data | Faster first contentful paint |
+| Role-based data fetching | Server validates access before returning data |
+
+### When to Keep CSR
+
+| Use Case | Why CSR |
+|----------|---------|
+| Search/filter | Real-time, no page reload |
+| Drag & drop | Interactive, no form submission |
+| File uploads with preview | Client-side preview before upload |
+| Real-time updates | WebSocket/polling based |
+
+### SSR Page Structure
+
+```
+routes/(restaurant)/recipes/
+├── +page.server.ts    # Load function + form actions
+└── +page.svelte       # Uses data prop, form actions with enhance
+```
+
+### SSR Load Function Pattern
+
+```typescript
+// +page.server.ts
+export const load: PageServerLoad = async ({ cookies }) => {
+    const data = await serverApi.get<DataType[]>('/endpoint', cookies);
+    return { data };
+};
+```
+
+### SSR Form Action Pattern
+
+```typescript
+// +page.server.ts
+export const actions: Actions = {
+    create: async ({ request, cookies }) => {
+        const formData = await request.formData();
+        // Validate and extract data...
+        
+        try {
+            await serverApi.post('/endpoint', data, cookies);
+            return { success: true, message: 'Created successfully' };
+        } catch (error) {
+            return fail(error.status, { error: error.message });
+        }
+    }
+};
+```
+
+### Svelte 5 Component Pattern
+
+```svelte
+<script lang="ts">
+    import { enhance } from '$app/forms';
+    
+    let { data, form } = $props();
+    let items = $derived(data.items ?? []);
+</script>
+
+<form method="POST" action="?/create" use:enhance>
+    <!-- Form fields -->
+</form>
+```
+
+## Implemented SSR Routes
+
+### Restaurant Owner Routes (`/restaurant/*`)
+
+- **Dashboard** (`/dashboard`) - SSR load for stats
+- **Recipes** (`/recipes`) - Full CRUD with form actions
+- **Staff** (`/staff`) - Full CRUD with form actions
+- **Settings** (`/settings`) - Update form action
+
+### System Admin Routes (`/system/*`)
+
+- **Overview** (`/overview`) - SSR load for system stats
+- **Restaurants** (`/restaurants`) - Approve/reject/suspend actions
+
+### Customer Routes (`/customer/*`)
+
+- **Home** (`/home`) - SSR load for restaurant listings
+
 ## Development Notes
 
 ### Environment Variables
