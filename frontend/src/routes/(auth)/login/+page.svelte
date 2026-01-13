@@ -1,54 +1,42 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import { AuthLayout } from '$lib/components/auth';
 	import { Button, TextField } from '$lib/components';
 	import { authStore } from '$lib/stores/authStore';
 	import { SystemRole } from '$lib/types';
+	import type { AuthUser } from '$lib/types';
 
-	let username = '';
-	let password = '';
-	let loading = false;
-	let error: string | null = null;
+	// Form state from server action
+	interface FormData {
+		error?: string;
+		username?: string;
+		success?: boolean;
+		user?: AuthUser;
+	}
 
-	async function handleSubmit() {
-		if (!username || !password) {
-			error = 'Please fill in all fields';
-			return;
-		}
+	let { form }: { form: FormData | null } = $props();
 
-		loading = true;
-		error = null;
+	let loading = $state(false);
 
-		try {
-			const user = await authStore.login({ username, password });
-			
-			// Redirect based on user role
-			if (user?.role) {
-				switch (user.role) {
-					case SystemRole.SUPERADMIN:
-						goto('/overview');
-						break;
+	function handleRedirect(user: AuthUser | null | undefined) {
+		// Redirect based on user role
+		if (user?.role) {
+			switch (user.role) {
+				case SystemRole.SUPERADMIN:
+					goto('/overview');
+					break;
 				case SystemRole.CUSTOMER:
 					goto('/home');
 					break;
 				case SystemRole.RESTAURANT_OWNER:
 					goto('/dashboard');
 					break;
-					default:
-						goto('/');
-				}
-			} else {
-				goto('/');
+				default:
+					goto('/');
 			}
-		} catch (err: any) {
-			if (err.status === 401) {
-				error = 'Invalid username or password';
-			} else {
-				error = 'An unexpected error occurred. Please try again.';
-			}
-			console.error('Login error:', err);
-		} finally {
-			loading = false;
+		} else {
+			goto('/');
 		}
 	}
 </script>
@@ -57,14 +45,36 @@
 	title="Welcome back"
 	subtitle="Enter your username and password to sign in to your account"
 >
-	<form on:submit|preventDefault={handleSubmit} class="space-y-4">
+	<form
+		method="POST"
+		use:enhance={() => {
+			loading = true;
+
+			return async ({ result, update }) => {
+				loading = false;
+				
+				if (result.type === 'success') {
+					const data = result.data as FormData;
+					if (data?.success && data?.user) {
+						// Update client-side auth store with user data (NOT the token)
+						authStore.setUser(data.user);
+						handleRedirect(data.user);
+						return;
+					}
+				}
+				// Let SvelteKit handle the form state update for errors
+				await update();
+			};
+		}}
+		class="space-y-4"
+	>
 		<TextField
 			id="username"
 			label="Username"
 			type="text"
 			name="username"
 			placeholder="johndoe"
-			bind:value={username}
+			value={form?.username ?? ''}
 			required
 		/>
 
@@ -73,12 +83,11 @@
 			label="Password"
 			type="password"
 			name="password"
-			bind:value={password}
 			required
 		/>
 
-		{#if error}
-			<div class="text-sm text-destructive">{error}</div>
+		{#if form?.error}
+			<div class="text-sm text-destructive">{form.error}</div>
 		{/if}
 
 		<Button 

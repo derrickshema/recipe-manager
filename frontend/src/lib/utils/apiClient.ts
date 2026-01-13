@@ -1,6 +1,15 @@
 import { goto } from '$app/navigation';
 
-// API Configuration: ensures consistent settings for all requests
+/**
+ * API Configuration
+ * 
+ * NOTE: With httpOnly cookie auth, authenticated API calls should go through
+ * SvelteKit server load functions which can access the cookie.
+ * 
+ * This client is now primarily for:
+ * - Public API endpoints (no auth required)
+ * - Server-side usage where cookies are forwarded
+ */
 const API_CONFIG = {
     baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
     defaultHeaders: {},
@@ -9,20 +18,19 @@ const API_CONFIG = {
 // HTTP Methods type: used for type safety in requests
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-// Request configuration type: to define options for API requests and serve as request blueprint 
+// Request configuration type
 export interface RequestConfig<TBody = unknown> extends Omit<RequestInit, 'body' | 'method' | 'headers'> {
     auth?: boolean;
     data?: TBody;
     params?: Record<string, string>;
-    headers?: Record<string, string>; // Custom headers to merge with defaults
+    headers?: Record<string, string>;
 }
 
 /**
- * Main API fetch function with improved type safety and error handling
- * @param path - The API endpoint path
- * @param method - HTTP method
- * @param config - Request configuration
- * @returns Promise with the Response object
+ * Main API fetch function
+ * 
+ * For authenticated requests, use server load functions instead.
+ * This function is for public endpoints or when you explicitly pass credentials.
  */
 export async function apiFetch(
     path: string,
@@ -31,53 +39,42 @@ export async function apiFetch(
 ): Promise<Response> {
     const { data, params, headers: customHeaders, ...customOptions } = config;
 
-    // Construct URL with API base: new URL is a standard safe way to build URLs
+    // Construct URL with API base
     const url = new URL(`${API_CONFIG.baseUrl}${path}`);
 
-    // Feature Use: Append URL query parameters from 'params'
+    // Append URL query parameters
     if (params) {
         Object.entries(params).forEach(([key, value]) => {
             url.searchParams.append(key, value);
         });
     }
 
-    // Prepare headers: Start with defaults, then allow them to be overridden by customHeaders
+    // Prepare headers
     const headers = {
         ...API_CONFIG.defaultHeaders,
         'Content-Type': 'application/json', 
         ...customHeaders,
     } as Record<string, string>;
 
-    // Add Authorization header if token exists and auth is not explicitly disabled
-    const shouldIncludeAuth = config.auth !== false; // Default to true
-    if (shouldIncludeAuth && typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-        const token = localStorage.getItem('access_token');
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-    }
+    // Note: We no longer add Authorization header from localStorage
+    // Authenticated requests should use server-side API proxy with httpOnly cookies
 
-    // Prepare body: stringify the data if it exists
+    // Prepare body
     const body = (data && method !== 'GET') ? JSON.stringify(data) : undefined;
     
-    // Final fetch configuration
+    // Include credentials for cookie-based auth
     const fetchConfig: RequestInit = {
         method,
         headers,
         body,
-        // Feature Use: Spread the rest of the RequestInit properties (cache, mode, etc.)
+        credentials: 'include', // Important: sends cookies with cross-origin requests
         ...customOptions,
     };
 
-    // Make the request
     const response = await fetch(url.toString(), fetchConfig);
 
     // Handle authentication errors
     if (response.status === 401) {
-        // Clear token and redirect to login
-        if (typeof localStorage !== 'undefined') {
-            localStorage.removeItem('access_token');
-        }
         goto('/login');
         throw new Error('Unauthorized - redirecting to login');
     }

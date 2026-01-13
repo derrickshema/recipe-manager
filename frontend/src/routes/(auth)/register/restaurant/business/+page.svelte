@@ -1,17 +1,34 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { AuthLayout } from '$lib/components/auth';
 	import { Button, TextField } from '$lib/components';
-	import { restaurantRegistrationStore } from '$lib/stores/restaurantRegistrationStore';
+	import { restaurantRegistrationStore, type RestaurantRegistrationData } from '$lib/stores/restaurantRegistrationStore';
 	import { authStore } from '$lib/stores/authStore';
+	import type { AuthUser } from '$lib/types';
 
-	let restaurantName = '';
-	let cuisineType = '';
-	let address = '';
-	let restaurantPhone = '';
-	let loading = false;
-	let error: string | null = null;
+	// Form state from server action
+	interface FormData {
+		error?: string;
+		restaurantName?: string;
+		cuisineType?: string;
+		address?: string;
+		restaurantPhone?: string;
+		success?: boolean;
+		user?: AuthUser;
+	}
+
+	let { form }: { form: FormData | null } = $props();
+
+	let restaurantName = $state('');
+	let cuisineType = $state('');
+	let address = $state('');
+	let restaurantPhone = $state('');
+	let loading = $state(false);
+	
+	// Owner data from step 1 (stored in client-side store)
+	let ownerData = $state<Partial<RestaurantRegistrationData>>({});
 
 	// Check if user came from step 1
 	onMount(async () => {
@@ -19,7 +36,9 @@
 		if (!data.first_name || !data.email) {
 			// User didn't complete step 1, redirect back
 			goto('/register/restaurant');
+			return;
 		}
+		ownerData = data;
 	});
 
 	function handleBack() {
@@ -32,55 +51,44 @@
 		});
 		goto('/register/restaurant');
 	}
-
-	async function handleSubmit() {
-		if (!restaurantName) {
-			error = 'Restaurant name is required';
-			return;
-		}
-
-		loading = true;
-		error = null;
-
-		try {
-			// Get all registration data
-			const data = await restaurantRegistrationStore.getData();
-
-			// Update with restaurant info
-			const completeData = {
-				...data,
-				restaurant_name: restaurantName,
-				cuisine_type: cuisineType,
-				address,
-				restaurant_phone: restaurantPhone
-			};
-
-			// Register restaurant owner (creates user + restaurant + membership)
-			const user = await authStore.registerRestaurantOwner(completeData);
-
-			// Reset the registration store
-			restaurantRegistrationStore.reset();
-
-			// Redirect to restaurant dashboard
-			goto('/restaurant/dashboard');
-		} catch (err: any) {
-			if (err.status === 409) {
-				error = 'An account with this email or username already exists';
-			} else {
-				error = err.message || 'An unexpected error occurred. Please try again.';
-			}
-			console.error('Registration error:', err);
-		} finally {
-			loading = false;
-		}
-	}
 </script>
 
 <AuthLayout
 	title="Restaurant Owner Registration"
 	subtitle="Step 2 of 2: Restaurant Details"
 >
-	<form on:submit|preventDefault={handleSubmit} class="space-y-4">
+	<form
+		method="POST"
+		use:enhance={() => {
+			loading = true;
+
+			return async ({ result, update }) => {
+				loading = false;
+				
+				if (result.type === 'success') {
+					const data = result.data as FormData;
+					if (data?.success && data?.user) {
+						// Reset the registration store
+						restaurantRegistrationStore.reset();
+						// Set user in auth store
+						authStore.setUser(data.user);
+						goto('/dashboard');
+						return;
+					}
+				}
+				await update();
+			};
+		}}
+		class="space-y-4"
+	>
+		<!-- Hidden fields for owner data from step 1 -->
+		<input type="hidden" name="firstName" value={ownerData.first_name ?? ''} />
+		<input type="hidden" name="lastName" value={ownerData.last_name ?? ''} />
+		<input type="hidden" name="username" value={ownerData.username ?? ''} />
+		<input type="hidden" name="email" value={ownerData.email ?? ''} />
+		<input type="hidden" name="password" value={ownerData.password ?? ''} />
+		<input type="hidden" name="phoneNumber" value={ownerData.phone_number ?? ''} />
+		
 		<!-- Progress Indicator -->
 		<div class="mb-6">
 			<div class="flex items-center justify-between mb-2">
@@ -133,8 +141,8 @@
 			</p>
 		</div>
 
-		{#if error}
-			<div class="text-sm text-destructive">{error}</div>
+		{#if form?.error}
+			<div class="text-sm text-destructive">{form.error}</div>
 		{/if}
 
 		<div class="flex gap-3">

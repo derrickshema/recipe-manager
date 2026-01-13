@@ -1,22 +1,8 @@
-import { redirect } from '@sveltejs/kit';
-import { get } from 'svelte/store';
-import { isAuthenticated, user } from '$lib/stores/authStore';
-import { SystemRole } from '$lib/types';
+// This file is kept for potential client-side universal load data
+// Authentication is now handled server-side in +layout.server.ts
 import type { LayoutLoad } from './$types';
 
 export const load: LayoutLoad = async () => {
-	const authenticated = get(isAuthenticated);
-	const currentUser = get(user);
-
-	// Redirect to login if not authenticated
-	if (!authenticated) {
-		throw redirect(302, '/login');
-	}
-
-	// Ensure user is a superadmin
-	if (currentUser?.role !== SystemRole.SUPERADMIN) {
-		throw redirect(302, '/');
-	}
-
-	return {};
+    // Client-side load can add any client-specific data here
+    return {};
 };

@@ -1,15 +1,8 @@
-import { redirect } from '@sveltejs/kit';
+// This file is kept for potential client-side universal load data
+// Authentication is now handled server-side in +layout.server.ts
 import type { LayoutLoad } from './$types';
-import { browser } from '$app/environment';
 
 export const load: LayoutLoad = async () => {
-    // Client-side authentication check
-    if (browser) {
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-            throw redirect(303, '/login');
-        }
-    }
-
+    // Client-side load can add any client-specific data here
     return {};
 };

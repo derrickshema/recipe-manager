@@ -2,8 +2,20 @@
 	import '../app.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { Layout } from '$lib/components';
+	import { authStore } from '$lib/stores/authStore';
+	import { browser } from '$app/environment';
+	import type { LayoutData } from './$types';
 
-	let { children } = $props();
+	let { children, data }: { children: any; data: LayoutData } = $props();
+
+	// Hydrate auth store with server-fetched user data
+	$effect(() => {
+		if (browser && data.user) {
+			authStore.setUser(data.user);
+		} else if (browser && !data.user) {
+			authStore.setUser(null);
+		}
+	});
 </script>
 
 <svelte:head>

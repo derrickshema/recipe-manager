@@ -1,6 +1,6 @@
 # auth_routes.py
 from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
 import os
@@ -11,6 +11,14 @@ from ..models.user import User, UserCreate, UserRead, Token, SystemRole, UserLog
 from ..models.membership import Membership, OrgRole
 from ..models.restaurant import Restaurant, RestaurantOwnerRegistration
 from ..utilities.auth_utils import verify_password, hash_password, create_access_token
+
+# Cookie configuration
+COOKIE_NAME = "access_token"
+COOKIE_MAX_AGE = 60 * 60 * 24 * 7  # 7 days in seconds
+COOKIE_SECURE = os.getenv("ENVIRONMENT", "development") == "production"  # True in production
+COOKIE_SAMESITE = "lax"  # "strict" blocks cross-site, "lax" allows top-level navigation
+COOKIE_HTTPONLY = True  # Prevents JavaScript access
+COOKIE_PATH = "/"
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -122,13 +130,15 @@ async def register_restaurant_owner(
     return db_user
 
 # --- Login Endpoint ---
-@router.post("/token", response_model=Token)
+@router.post("/token")
 async def login_for_access_token(
+    response: Response,
     credentials: UserLogin,
     session: Session = Depends(get_session)
 ):
     """
-    Authenticates a user and returns a JWT access token.
+    Authenticates a user and sets an httpOnly cookie with the JWT.
+    Returns user profile (token is in cookie, not response body).
     Accepts JSON: {"username": "...", "password": "..."}
     """
     username = credentials.username
@@ -139,22 +149,60 @@ async def login_for_access_token(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"}, # Standard header for OAuth2
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     # Create the access token
-    access_token_expires = timedelta(minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))) # Default to 30 minutes if not set
+    access_token_expires = timedelta(minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")))
     access_token = create_access_token(
-        data={"sub": user.username}, # 'sub' claim identifies the user
+        data={"sub": user.username},
         expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    
+    # Set httpOnly cookie instead of returning token in body
+    response.set_cookie(
+        key=COOKIE_NAME,
+        value=access_token,
+        max_age=COOKIE_MAX_AGE,
+        httponly=COOKIE_HTTPONLY,
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        path=COOKIE_PATH,
+    )
+    
+    # Return user profile (frontend needs user data, not the token)
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "role": user.role,
+        "message": "Login successful"
+    }
+
+
+# --- Logout Endpoint ---
+@router.post("/logout")
+async def logout(response: Response):
+    """
+    Logs out user by clearing the httpOnly cookie.
+    """
+    response.delete_cookie(
+        key=COOKIE_NAME,
+        path=COOKIE_PATH,
+        httponly=COOKIE_HTTPONLY,
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+    )
+    return {"message": "Logged out successfully"}
+
 
 # --- Protected Endpoint Example (for testing auth) ---
 @router.get("/me", response_model=UserRead)
 async def read_users_me(current_user: User = Depends(get_current_user)):
     """
     Retrieves the current authenticated user's information.
-    Requires a valid JWT in the Authorization header.
+    Requires a valid JWT in the Authorization header or cookie.
     """
     return current_user

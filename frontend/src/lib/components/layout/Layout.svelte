@@ -1,15 +1,9 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
 	import { isAuthenticated, user, authStore } from '$lib/stores/authStore';
-	import { SystemRole } from '$lib/types/roles';
 
 	export let showNav = true;
-	
-	async function handleLogout() {
-		await authStore.signOut();
-		goto('/login');
-	}
 </script>
 
 <div class="min-h-screen flex flex-col">
@@ -35,13 +29,25 @@
 								</span>
 							</div>
 							
-							<!-- Logout Button -->
-							<button
-								class="px-4 py-2 text-sm font-medium rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
-								onclick={handleLogout}
+							<!-- Logout Form (uses server action) -->
+							<form
+								method="POST"
+								action="/logout"
+								use:enhance={() => {
+									// Clear client-side auth store immediately
+									authStore.setUser(null);
+									return async ({ update }) => {
+										await update();
+									};
+								}}
 							>
-								Logout
-							</button>
+								<button
+									type="submit"
+									class="px-4 py-2 text-sm font-medium rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
+								>
+									Logout
+								</button>
+							</form>
 						</div>
 					{:else}
 						<a
