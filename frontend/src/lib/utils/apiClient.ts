@@ -1,93 +1,151 @@
 import { goto } from '$app/navigation';
 
 /**
- * API Configuration
+ * ============================================================================
+ * CLIENT-SIDE API CLIENT
+ * ============================================================================
  * 
- * NOTE: With httpOnly cookie auth, authenticated API calls should go through
- * SvelteKit server load functions which can access the cookie.
+ * IMPORTANT: This file is for CLIENT-SIDE (browser) API calls ONLY.
  * 
- * This client is now primarily for:
- * - Public API endpoints (no auth required)
- * - Server-side usage where cookies are forwarded
+ * ┌─────────────────────────────────────────────────────────────────────────┐
+ * │  WHEN TO USE THIS vs SERVER-SIDE FETCH                                  │
+ * ├─────────────────────────────────────────────────────────────────────────┤
+ * │  USE SERVER-SIDE (src/lib/server/api.ts + form actions):                │
+ * │    ✅ Initial page data loading (SSR)                                   │
+ * │    ✅ CRUD operations (create, update, delete)                          │
+ * │    ✅ Any authenticated API call that can use form actions              │
+ * │    ✅ Data that should be SEO-indexed                                   │
+ * │                                                                         │
+ * │  USE THIS CLIENT-SIDE API (this file):                                  │
+ * │    ✅ Real-time search with debouncing                                  │
+ * │    ✅ Autocomplete/typeahead features                                   │
+ * │    ✅ Interactive filtering without page reload                         │
+ * │    ✅ File uploads with progress tracking                               │
+ * │    ✅ WebSocket fallback polling                                        │
+ * │    ✅ Client-only features (shopping cart sync, etc.)                   │
+ * └─────────────────────────────────────────────────────────────────────────┘
+ * 
+ * The httpOnly cookie is automatically sent with requests (credentials: 'include').
+ * This means authenticated requests work here too, but prefer SSR when possible.
  */
-const API_CONFIG = {
-    baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
-    defaultHeaders: {},
-} as const;
 
-// HTTP Methods type: used for type safety in requests
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-// Request configuration type
-export interface RequestConfig<TBody = unknown> extends Omit<RequestInit, 'body' | 'method' | 'headers'> {
-    auth?: boolean;
+export interface RequestConfig<TBody = unknown> {
     data?: TBody;
     params?: Record<string, string>;
     headers?: Record<string, string>;
+    signal?: AbortSignal; // For cancellable requests (search debouncing)
 }
 
+export interface ApiError extends Error {
+    status: number;
+    data?: unknown;
+}
+
+// ============================================================================
+// CORE FETCH FUNCTION
+// ============================================================================
+
 /**
- * Main API fetch function
- * 
- * For authenticated requests, use server load functions instead.
- * This function is for public endpoints or when you explicitly pass credentials.
+ * Low-level fetch wrapper for client-side API calls.
+ * Prefer using the `api` helper object below for convenience.
  */
-export async function apiFetch(
+export async function apiFetch<T = unknown>(
     path: string,
     method: HttpMethod,
     config: RequestConfig = {}
-): Promise<Response> {
-    const { data, params, headers: customHeaders, ...customOptions } = config;
+): Promise<T> {
+    const { data, params, headers: customHeaders, signal } = config;
 
-    // Construct URL with API base
-    const url = new URL(`${API_CONFIG.baseUrl}${path}`);
-
-    // Append URL query parameters
+    // Build URL with query parameters
+    const url = new URL(`${API_BASE_URL}${path}`);
     if (params) {
         Object.entries(params).forEach(([key, value]) => {
             url.searchParams.append(key, value);
         });
     }
 
-    // Prepare headers
-    const headers = {
-        ...API_CONFIG.defaultHeaders,
-        'Content-Type': 'application/json', 
-        ...customHeaders,
-    } as Record<string, string>;
-
-    // Note: We no longer add Authorization header from localStorage
-    // Authenticated requests should use server-side API proxy with httpOnly cookies
-
-    // Prepare body
-    const body = (data && method !== 'GET') ? JSON.stringify(data) : undefined;
-    
-    // Include credentials for cookie-based auth
-    const fetchConfig: RequestInit = {
+    // Prepare request
+    const response = await fetch(url.toString(), {
         method,
-        headers,
-        body,
-        credentials: 'include', // Important: sends cookies with cross-origin requests
-        ...customOptions,
-    };
+        headers: {
+            'Content-Type': 'application/json',
+            ...customHeaders,
+        },
+        body: data && method !== 'GET' ? JSON.stringify(data) : undefined,
+        credentials: 'include', // Sends httpOnly cookie automatically
+        signal,
+    });
 
-    const response = await fetch(url.toString(), fetchConfig);
-
-    // Handle authentication errors
+    // Handle 401 - redirect to login
     if (response.status === 401) {
         goto('/login');
-        throw new Error('Unauthorized - redirecting to login');
+        throw createApiError('Unauthorized - redirecting to login', 401);
     }
 
-    // Handle other HTTP errors
+    // Handle errors
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({ detail: response.statusText }));
-        const error = new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
-        (error as any).status = response.status;
-        (error as any).data = errorData;
-        throw error;
+        throw createApiError(
+            errorData.detail || `HTTP ${response.status}: ${response.statusText}`,
+            response.status,
+            errorData
+        );
     }
 
-    return response;
+    // Handle empty responses (204 No Content)
+    if (response.status === 204) {
+        return null as T;
+    }
+
+    return response.json() as Promise<T>;
 }
 
+function createApiError(message: string, status: number, data?: unknown): ApiError {
+    const error = new Error(message) as ApiError;
+    error.status = status;
+    error.data = data;
+    return error;
+}
+
+// ============================================================================
+// CONVENIENCE API OBJECT
+// ============================================================================
+
+/**
+ * Convenient API helper with typed methods.
+ * 
+ * @example
+ * // Search with debouncing (client-side only feature)
+ * const results = await api.get<SearchResult[]>('/recipes/search', {
+ *     params: { q: searchTerm },
+ *     signal: abortController.signal
+ * });
+ * 
+ * @example
+ * // File upload with progress (not shown here, but you could extend this)
+ * const uploaded = await api.post<FileResponse>('/files/upload', formData);
+ */
+export const api = {
+    get: <T>(path: string, config?: RequestConfig) => 
+        apiFetch<T>(path, 'GET', config),
+    
+    post: <T>(path: string, data?: unknown, config?: RequestConfig) => 
+        apiFetch<T>(path, 'POST', { ...config, data }),
+    
+    put: <T>(path: string, data?: unknown, config?: RequestConfig) => 
+        apiFetch<T>(path, 'PUT', { ...config, data }),
+    
+    patch: <T>(path: string, data?: unknown, config?: RequestConfig) => 
+        apiFetch<T>(path, 'PATCH', { ...config, data }),
+    
+    delete: <T>(path: string, config?: RequestConfig) => 
+        apiFetch<T>(path, 'DELETE', config),
+} as const;
