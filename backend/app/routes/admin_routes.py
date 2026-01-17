@@ -9,7 +9,7 @@ from typing import List
 from ..db.session import get_session
 from ..models.user import User, SystemRole, UserRead
 from ..models.restaurant import Restaurant, RestaurantRead, ApprovalStatus
-from ..utilities.users_utils import get_current_user
+from ..utilities.auth import get_current_user
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 

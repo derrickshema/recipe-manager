@@ -1,8 +1,7 @@
 from sqlmodel import Session, select
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from ..models.membership import OrgRole
-from ..utilities.users_utils import require_edit_menu_access, require_org_roles, require_read_restaurant_access
+from ..utilities.rbac import require_edit_menu_access, require_read_restaurant_access
 
 from ..models.user import User
 
@@ -74,7 +73,7 @@ async def get_recipe(
     return recipe
 
 @router.put("/{recipe_id}", response_model=Recipe)
-async def update_student(recipe_id: int, updated_student: RecipeUpdate, session: Session = Depends(get_session), current_user: User = Depends(require_edit_menu_access())):
+async def update_recipe(recipe_id: int, updated_recipe: RecipeUpdate, session: Session = Depends(get_session), current_user: User = Depends(require_edit_menu_access())):
     """
     Updates a recipe's information in the database.
     """
@@ -82,7 +81,7 @@ async def update_student(recipe_id: int, updated_student: RecipeUpdate, session:
     if not existing_recipe:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found")
 
-    for key, value in updated_student.model_dump(exclude_unset=True).items():
+    for key, value in updated_recipe.model_dump(exclude_unset=True).items():
         setattr(existing_recipe, key, value)
 
     session.add(existing_recipe)
@@ -91,9 +90,9 @@ async def update_student(recipe_id: int, updated_student: RecipeUpdate, session:
     return existing_recipe
 
 @router.delete("/{recipe_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_student(recipe_id: int, session: Session = Depends(get_session), current_user: User = Depends(require_edit_menu_access())):
+async def delete_recipe(recipe_id: int, session: Session = Depends(get_session), current_user: User = Depends(require_edit_menu_access())):
     """
-    Deletes a student by ID from the database.
+    Deletes a recipe by ID from the database.
     """
     recipe = session.exec(select(Recipe).where(Recipe.id == recipe_id)).first()
     if not recipe:

@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
-from ..utilities.users_utils import get_current_user, require_manage_restaurant_access, require_read_restaurant_access, require_restaurant_creation_access, require_system_roles
+from ..utilities.auth import get_current_user
+from ..utilities.rbac import require_manage_restaurant_access, require_read_restaurant_access, require_restaurant_creation_access, require_system_roles
 
 from ..db.session import get_session
 from ..models.restaurant import Restaurant, RestaurantCreate, RestaurantUpdate, ApprovalStatus
