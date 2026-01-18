@@ -9,20 +9,9 @@ from typing import List
 from ..db.session import get_session
 from ..models.user import User, SystemRole, UserRead
 from ..models.restaurant import Restaurant, RestaurantRead, ApprovalStatus
-from ..utilities.auth import get_current_user
+from ..utilities.rbac import require_superadmin
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
-
-
-# --- Dependency: Require Superadmin Role ---
-async def require_superadmin(current_user: User = Depends(get_current_user)):
-    """Ensure the current user is a superadmin."""
-    if current_user.role != SystemRole.SUPERADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="This action requires superadmin privileges"
-        )
-    return current_user
 
 
 # --- User Management ---

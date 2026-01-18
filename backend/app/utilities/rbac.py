@@ -29,6 +29,16 @@ def require_system_roles(*roles: SystemRole):
     return dependency
 
 
+async def require_superadmin(current_user: User = Depends(get_current_user)):
+    """Ensure the current user is a superadmin."""
+    if current_user.role != SystemRole.SUPERADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This action requires superadmin privileges"
+        )
+    return current_user
+
+
 def require_org_roles(*roles: OrgRole):
     """
     Requires the user to have one of the specified roles within a restaurant.
