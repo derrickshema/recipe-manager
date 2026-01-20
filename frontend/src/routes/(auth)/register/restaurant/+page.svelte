@@ -1,51 +1,48 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { enhance } from '$app/forms';
 	import { AuthLayout } from '$lib/components/auth';
 	import { Button, TextField } from '$lib/components';
-	import { restaurantRegistrationStore } from '$lib/stores/restaurantRegistrationStore';
+	import type { ActionData, PageData } from './$types';
 
-	let firstName = '';
-	let lastName = '';
-	let username = '';
-	let email = '';
-	let phoneNumber = '';
-	let password = '';
-	let confirmPassword = '';
-	let error: string | null = null;
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	$: passwordsMatch = password === confirmPassword;
+	// Initialize from server data (if user navigated back from step 2)
+	let firstName = $state(form?.firstName ?? data.savedData?.firstName ?? '');
+	let lastName = $state(form?.lastName ?? data.savedData?.lastName ?? '');
+	let username = $state(form?.username ?? data.savedData?.username ?? '');
+	let email = $state(form?.email ?? data.savedData?.email ?? '');
+	let phoneNumber = $state(form?.phoneNumber ?? data.savedData?.phoneNumber ?? '');
+	let password = $state('');
+	let confirmPassword = $state('');
+	let loading = $state(false);
 
-	function handleNext() {
-		if (!firstName || !lastName || !username || !email || !password || !confirmPassword) {
-			error = 'Please fill in all required fields';
-			return;
+	$effect(() => {
+		if (form) {
+			firstName = form.firstName ?? firstName;
+			lastName = form.lastName ?? lastName;
+			username = form.username ?? username;
+			email = form.email ?? email;
+			phoneNumber = form.phoneNumber ?? phoneNumber;
 		}
-
-		if (!passwordsMatch) {
-			error = 'Passwords do not match';
-			return;
-		}
-
-		// Save owner info to store
-		restaurantRegistrationStore.updateOwnerInfo({
-			first_name: firstName,
-			last_name: lastName,
-			username,
-			email,
-			password,
-			phone_number: phoneNumber
-		});
-
-		// Go to next step
-		goto('/register/restaurant/business');
-	}
+	});
 </script>
 
 <AuthLayout
 	title="Restaurant Owner Registration"
 	subtitle="Step 1 of 2: Your Information"
 >
-	<form on:submit|preventDefault={handleNext} class="space-y-4">
+	<form
+		method="POST"
+		action="?/next"
+		use:enhance={() => {
+			loading = true;
+			return async ({ update }) => {
+				loading = false;
+				await update();
+			};
+		}}
+		class="space-y-4"
+	>
 		<!-- Progress Indicator -->
 		<div class="mb-6">
 			<div class="flex items-center justify-between mb-2">
@@ -121,16 +118,15 @@
 			type="password"
 			name="confirmPassword"
 			bind:value={confirmPassword}
-			error={!passwordsMatch && confirmPassword ? 'Passwords do not match' : undefined}
 			required
 		/>
 
-		{#if error}
-			<div class="text-sm text-destructive">{error}</div>
+		{#if form?.error}
+			<div class="text-sm text-destructive">{form.error}</div>
 		{/if}
 
-		<Button type="submit" fullWidth>
-			Next: Restaurant Details →
+		<Button type="submit" fullWidth disabled={loading}>
+			{loading ? 'Processing...' : 'Next: Restaurant Details →'}
 		</Button>
 	</form>
 

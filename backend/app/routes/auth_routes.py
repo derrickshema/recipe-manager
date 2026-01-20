@@ -94,7 +94,7 @@ async def register_restaurant_owner(
     # Hash the password
     hashed_password = hash_password(registration_data.password)
     
-    # Create the owner user account with USER system role
+    # Create the owner user account with RESTAURANT_OWNER system role
     db_user = User(
         username=registration_data.username,
         hashed_password=hashed_password,
@@ -110,7 +110,10 @@ async def register_restaurant_owner(
     
     # Create the restaurant
     db_restaurant = Restaurant(
-        restaurant_name=registration_data.restaurant_name
+        restaurant_name=registration_data.restaurant_name,
+        cuisine_type=registration_data.cuisine_type,
+        address=registration_data.address,
+        phone=registration_data.restaurant_phone
     )
     
     session.add(db_restaurant)

@@ -1,15 +1,13 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
 	import { AuthLayout } from '$lib/components/auth';
 	import { Button, TextField } from '$lib/components';
-	import { restaurantRegistrationStore, type RestaurantRegistrationData } from '$lib/stores/restaurantRegistrationStore';
 	import { authStore } from '$lib/stores/authStore';
+	import type { ActionData, PageData } from './$types';
 	import type { AuthUser } from '$lib/types';
 
-	// Form state from server action
-	interface FormData {
+	interface FormResult {
 		error?: string;
 		restaurantName?: string;
 		cuisineType?: string;
@@ -19,38 +17,13 @@
 		user?: AuthUser;
 	}
 
-	let { form }: { form: FormData | null } = $props();
+	let { data, form }: { data: PageData; form: FormResult | null } = $props();
 
-	let restaurantName = $state('');
-	let cuisineType = $state('');
-	let address = $state('');
-	let restaurantPhone = $state('');
+	let restaurantName = $state(form?.restaurantName ?? '');
+	let cuisineType = $state(form?.cuisineType ?? '');
+	let address = $state(form?.address ?? '');
+	let restaurantPhone = $state(form?.restaurantPhone ?? '');
 	let loading = $state(false);
-	
-	// Owner data from step 1 (stored in client-side store)
-	let ownerData = $state<Partial<RestaurantRegistrationData>>({});
-
-	// Check if user came from step 1
-	onMount(async () => {
-		const data = await restaurantRegistrationStore.getData();
-		if (!data.first_name || !data.email) {
-			// User didn't complete step 1, redirect back
-			goto('/register/restaurant');
-			return;
-		}
-		ownerData = data;
-	});
-
-	function handleBack() {
-		// Save current restaurant info before going back
-		restaurantRegistrationStore.updateRestaurantInfo({
-			restaurant_name: restaurantName,
-			cuisine_type: cuisineType,
-			address,
-			restaurant_phone: restaurantPhone
-		});
-		goto('/register/restaurant');
-	}
 </script>
 
 <AuthLayout
@@ -66,12 +39,10 @@
 				loading = false;
 				
 				if (result.type === 'success') {
-					const data = result.data as FormData;
-					if (data?.success && data?.user) {
-						// Reset the registration store
-						restaurantRegistrationStore.reset();
+					const resultData = result.data as FormResult;
+					if (resultData?.success && resultData?.user) {
 						// Set user in auth store
-						authStore.setUser(data.user);
+						authStore.setUser(resultData.user);
 						goto('/dashboard');
 						return;
 					}
@@ -81,13 +52,13 @@
 		}}
 		class="space-y-4"
 	>
-		<!-- Hidden fields for owner data from step 1 -->
-		<input type="hidden" name="firstName" value={ownerData.first_name ?? ''} />
-		<input type="hidden" name="lastName" value={ownerData.last_name ?? ''} />
-		<input type="hidden" name="username" value={ownerData.username ?? ''} />
-		<input type="hidden" name="email" value={ownerData.email ?? ''} />
-		<input type="hidden" name="password" value={ownerData.password ?? ''} />
-		<input type="hidden" name="phoneNumber" value={ownerData.phone_number ?? ''} />
+		<!-- Owner info confirmation -->
+		<div class="bg-muted/50 p-3 rounded-lg text-sm">
+			<p class="text-muted-foreground">
+				Registering as: <span class="font-medium text-foreground">{data.ownerName}</span>
+				<span class="text-muted-foreground">({data.ownerEmail})</span>
+			</p>
+		</div>
 		
 		<!-- Progress Indicator -->
 		<div class="mb-6">
@@ -146,10 +117,10 @@
 		{/if}
 
 		<div class="flex gap-3">
-			<Button type="button" variant="secondary" on:click={handleBack} class="flex-1">
+			<Button type="button" variant="secondary" href="/register/restaurant" class="flex-1">
 				← Back
 			</Button>
-			<Button type="submit" {loading} class="flex-1">
+			<Button type="submit" disabled={loading} class="flex-1">
 				{loading ? 'Creating Account...' : 'Complete Registration'}
 			</Button>
 		</div>

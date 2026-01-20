@@ -1,30 +1,68 @@
 import { fail, redirect } from '@sveltejs/kit';
-import type { Actions, ServerLoad } from '@sveltejs/kit';
+import type { Actions, PageServerLoad } from './$types';
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
+const REGISTRATION_COOKIE = 'registration_step1';
 
-// Redirect authenticated users away from registration
-export const load: ServerLoad = async ({ cookies }) => {
+// Decode step 1 data from cookie
+function decodeData(encoded: string): Record<string, string> | null {
+    try {
+        return JSON.parse(Buffer.from(encoded, 'base64').toString());
+    } catch {
+        return null;
+    }
+}
+
+// Check for step 1 data and redirect if missing
+export const load: PageServerLoad = async ({ cookies }) => {
     const token = cookies.get('access_token');
     if (token) {
         throw redirect(303, '/');
     }
-    return {};
+
+    // Check if step 1 data exists
+    const step1Cookie = cookies.get(REGISTRATION_COOKIE);
+    if (!step1Cookie) {
+        // User didn't complete step 1, redirect back
+        throw redirect(303, '/register/restaurant');
+    }
+
+    const step1Data = decodeData(step1Cookie);
+    if (!step1Data || !step1Data.email) {
+        throw redirect(303, '/register/restaurant');
+    }
+
+    // Return only safe data to display (not password)
+    return {
+        ownerEmail: step1Data.email,
+        ownerName: `${step1Data.firstName} ${step1Data.lastName}`
+    };
 };
 
 export const actions: Actions = {
-    default: async ({ request, cookies, fetch }) => {
+    default: async ({ request, cookies }) => {
         const formData = await request.formData();
         
-        // Owner info (from hidden fields or form)
-        const firstName = formData.get('firstName') as string;
-        const lastName = formData.get('lastName') as string;
-        const username = formData.get('username') as string;
-        const email = formData.get('email') as string;
-        const password = formData.get('password') as string;
-        const phoneNumber = formData.get('phoneNumber') as string;
+        // Get step 1 data from cookie
+        const step1Cookie = cookies.get(REGISTRATION_COOKIE);
+        if (!step1Cookie) {
+            return fail(400, {
+                error: 'Session expired. Please start from step 1.',
+            });
+        }
+
+        const step1Data = decodeData(step1Cookie);
+        if (!step1Data) {
+            cookies.delete(REGISTRATION_COOKIE, { path: '/' });
+            return fail(400, {
+                error: 'Invalid session. Please start from step 1.',
+            });
+        }
+
+        // Owner info from cookie
+        const { firstName, lastName, username, email, password, phoneNumber } = step1Data;
         
-        // Restaurant info
+        // Restaurant info from form
         const restaurantName = formData.get('restaurantName') as string;
         const cuisineType = formData.get('cuisineType') as string;
         const address = formData.get('address') as string;
@@ -112,6 +150,9 @@ export const actions: Actions = {
                     });
                 }
             }
+
+            // Clean up the registration cookie
+            cookies.delete(REGISTRATION_COOKIE, { path: '/' });
 
             return {
                 success: true,
