@@ -117,9 +117,11 @@
 		{/if}
 
 		<div class="flex gap-3">
-			<Button type="button" variant="secondary" href="/register/restaurant" class="flex-1">
-				← Back
-			</Button>
+			<a href="/register/restaurant" class="flex-1">
+				<Button type="button" variant="secondary" class="w-full">
+					← Back
+				</Button>
+			</a>
 			<Button type="submit" disabled={loading} class="flex-1">
 				{loading ? 'Creating Account...' : 'Complete Registration'}
 			</Button>

@@ -68,7 +68,7 @@
 			{#if $$slots.footer}
 				<div class="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
 					<slot name="footer">
-						<Button variant="ghost" on:click={closeModal}>Cancel</Button>
+						<Button variant="ghost" onclick={closeModal}>Cancel</Button>
 					</slot>
 				</div>
 			{/if}

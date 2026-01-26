@@ -50,6 +50,19 @@ async def create_restaurant(restaurant: RestaurantCreate, session: Session = Dep
     session.refresh(new_restaurant)
     return new_restaurant
 
+
+@router.get("/approved", response_model=list[Restaurant])
+async def get_approved_restaurants(session: Session = Depends(get_session)):
+    """
+    Public endpoint: Fetches all approved restaurants.
+    No authentication required - customers can browse without logging in.
+    """
+    restaurants = session.exec(
+        select(Restaurant).where(Restaurant.approval_status == ApprovalStatus.APPROVED)
+    ).all()
+    return restaurants
+
+
 @router.get("/", response_model=list[Restaurant])
 async def get_restaurants(session: Session = Depends(get_session), current_user: User = Depends(require_system_roles(SystemRole.SUPERADMIN))):
     """

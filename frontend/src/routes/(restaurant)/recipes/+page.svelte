@@ -29,6 +29,7 @@
     });
 
     function openCreateModal() {
+        console.log('openCreateModal called, showCreateModal:', showCreateModal);
         formValues = {
             title: '',
             description: '',
@@ -39,6 +40,7 @@
             servings: ''
         };
         showCreateModal = true;
+        console.log('showCreateModal after:', showCreateModal);
     }
 
     function openEditModal(recipe: Recipe) {
@@ -170,7 +172,7 @@
 
 <!-- Create Recipe Modal -->
 {#if showCreateModal}
-    <Modal title="Create Recipe" onClose={closeModals}>
+    <Modal open={true} title="Create Recipe" onClose={closeModals}>
         <form 
             method="POST" 
             action="?/create"
@@ -277,7 +279,7 @@
 
 <!-- Edit Recipe Modal -->
 {#if showEditModal && editingRecipe}
-    <Modal title="Edit Recipe" onClose={closeModals}>
+    <Modal open={true} title="Edit Recipe" onClose={closeModals}>
         <form 
             method="POST" 
             action="?/update"
