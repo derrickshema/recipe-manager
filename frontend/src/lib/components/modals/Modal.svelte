@@ -10,9 +10,9 @@
 
 	const sizes = {
 		sm: 'max-w-sm',
-		md: 'max-w-md',
-		lg: 'max-w-lg',
-		xl: 'max-w-xl'
+		md: 'max-w-lg',
+		lg: 'max-w-2xl',
+		xl: 'max-w-4xl'
 	};
 
 	function closeModal() {
@@ -42,7 +42,7 @@
 		role="presentation"
 	>
 		<div
-			class="fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg {sizes[size]}"
+			class="fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg {sizes[size]} max-h-[85vh] overflow-y-auto"
 			transition:scale={{ duration: 200 }}
 			on:click|stopPropagation
 			on:keydown|stopPropagation

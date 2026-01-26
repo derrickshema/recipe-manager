@@ -17,8 +17,21 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Add CUSTOMER to the system_role enum
-    op.execute("ALTER TYPE system_role ADD VALUE 'CUSTOMER'")
+    # Add CUSTOMER to the system_role enum (if it doesn't already exist)
+    # Using a DO block to check existence first - PostgreSQL doesn't have IF NOT EXISTS for ADD VALUE
+    op.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_enum 
+                WHERE enumlabel = 'CUSTOMER' 
+                AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'system_role')
+            ) THEN
+                ALTER TYPE system_role ADD VALUE 'CUSTOMER';
+            END IF;
+        END
+        $$;
+    """)
 
 
 def downgrade() -> None:

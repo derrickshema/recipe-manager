@@ -2,6 +2,7 @@
     import { enhance } from '$app/forms';
     import { Button } from '$lib/components';
     import Modal from '$lib/components/modals/Modal.svelte';
+    import ImageUpload from '$lib/components/forms/ImageUpload.svelte';
     import type { Recipe } from '$lib/types';
 
     // SSR data from +page.server.ts
@@ -17,7 +18,7 @@
     let restaurant = $derived(data.restaurant);
     let recipes = $derived(data.recipes ?? []);
 
-    // Form values for create/edit
+    // Form values for create/edit (now includes imageUrl)
     let formValues = $state({
         title: '',
         description: '',
@@ -25,7 +26,8 @@
         instructions: '',
         prepTime: '',
         cookTime: '',
-        servings: ''
+        servings: '',
+        imageUrl: ''
     });
 
     function openCreateModal() {
@@ -37,7 +39,8 @@
             instructions: '',
             prepTime: '',
             cookTime: '',
-            servings: ''
+            servings: '',
+            imageUrl: ''
         };
         showCreateModal = true;
         console.log('showCreateModal after:', showCreateModal);
@@ -52,7 +55,8 @@
             instructions: recipe.instructions.join('\n'),
             prepTime: recipe.prep_time?.toString() || '',
             cookTime: recipe.cook_time?.toString() || '',
-            servings: recipe.servings?.toString() || ''
+            servings: recipe.servings?.toString() || '',
+            imageUrl: recipe.image_url || ''
         };
         showEditModal = true;
     }
@@ -112,57 +116,74 @@
     {:else}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {#each recipes as recipe (recipe.id)}
-                <div class="bg-card border rounded-lg p-6 hover:shadow-md transition-shadow">
-                    <h3 class="text-xl font-semibold mb-2">{recipe.title}</h3>
-                    {#if recipe.description}
-                        <p class="text-muted-foreground text-sm mb-4 line-clamp-2">{recipe.description}</p>
+                <div class="bg-card border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                    <!-- Recipe Image -->
+                    {#if recipe.image_url}
+                        <img 
+                            src={recipe.image_url} 
+                            alt={recipe.title}
+                            class="w-full h-48 object-cover"
+                        />
+                    {:else}
+                        <div class="w-full h-48 bg-muted/30 flex items-center justify-center">
+                            <svg class="w-12 h-12 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
                     {/if}
                     
-                    <div class="flex gap-4 text-sm text-muted-foreground mb-4">
-                        {#if recipe.prep_time}
-                            <span>Prep: {recipe.prep_time}min</span>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold mb-2">{recipe.title}</h3>
+                        {#if recipe.description}
+                            <p class="text-muted-foreground text-sm mb-4 line-clamp-2">{recipe.description}</p>
                         {/if}
-                        {#if recipe.cook_time}
-                            <span>Cook: {recipe.cook_time}min</span>
-                        {/if}
-                        {#if recipe.servings}
-                            <span>Serves: {recipe.servings}</span>
-                        {/if}
-                    </div>
+                    
+                        <div class="flex gap-4 text-sm text-muted-foreground mb-4">
+                            {#if recipe.prep_time}
+                                <span>Prep: {recipe.prep_time}min</span>
+                            {/if}
+                            {#if recipe.cook_time}
+                                <span>Cook: {recipe.cook_time}min</span>
+                            {/if}
+                            {#if recipe.servings}
+                                <span>Serves: {recipe.servings}</span>
+                            {/if}
+                        </div>
 
-                    <div class="flex gap-2">
-                        <Button 
-                            variant="secondary" 
-                            size="sm"
-                            onclick={() => openEditModal(recipe)}
-                        >
-                            Edit
-                        </Button>
-                        <form 
-                            method="POST" 
-                            action="?/delete"
-                            use:enhance={() => {
-                                if (!confirm('Are you sure you want to delete this recipe?')) {
-                                    return () => {};
-                                }
-                                submitting = true;
-                                return async ({ update }) => {
-                                    await update();
-                                    submitting = false;
-                                };
-                            }}
-                        >
-                            <input type="hidden" name="recipeId" value={recipe.id} />
-                            <input type="hidden" name="restaurantId" value={restaurant?.id} />
+                        <div class="flex gap-2">
                             <Button 
-                                type="submit"
-                                variant="danger" 
+                                variant="secondary" 
                                 size="sm"
-                                disabled={submitting}
+                                onclick={() => openEditModal(recipe)}
                             >
-                                Delete
+                                Edit
                             </Button>
-                        </form>
+                            <form 
+                                method="POST" 
+                                action="?/delete"
+                                use:enhance={() => {
+                                    if (!confirm('Are you sure you want to delete this recipe?')) {
+                                        return () => {};
+                                    }
+                                    submitting = true;
+                                    return async ({ update }) => {
+                                        await update();
+                                        submitting = false;
+                                    };
+                                }}
+                            >
+                                <input type="hidden" name="recipeId" value={recipe.id} />
+                                <input type="hidden" name="restaurantId" value={restaurant?.id} />
+                                <Button 
+                                    type="submit"
+                                    variant="danger" 
+                                    size="sm"
+                                    disabled={submitting}
+                                >
+                                    Delete
+                                </Button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             {/each}
@@ -209,6 +230,15 @@
                     class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary"
                 ></textarea>
             </div>
+
+            <!-- Image Upload -->
+            <ImageUpload
+                imageUrl={formValues.imageUrl}
+                onUpload={(url) => formValues.imageUrl = url}
+                onRemove={() => formValues.imageUrl = ''}
+                disabled={submitting}
+            />
+            <input type="hidden" name="imageUrl" value={formValues.imageUrl} />
 
             <div class="grid grid-cols-3 gap-4">
                 <div>
@@ -317,6 +347,15 @@
                     class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary"
                 ></textarea>
             </div>
+
+            <!-- Image Upload -->
+            <ImageUpload
+                imageUrl={formValues.imageUrl}
+                onUpload={(url) => formValues.imageUrl = url}
+                onRemove={() => formValues.imageUrl = ''}
+                disabled={submitting}
+            />
+            <input type="hidden" name="imageUrl" value={formValues.imageUrl} />
 
             <div class="grid grid-cols-3 gap-4">
                 <div>

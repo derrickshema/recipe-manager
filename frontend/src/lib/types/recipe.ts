@@ -13,6 +13,7 @@ export interface Recipe {
     prep_time?: number;
     cook_time?: number;
     servings?: number;
+    image_url?: string;  // S3 URL for recipe image
     created_at: string;
     updated_at: string;
     restaurant_id: number;
@@ -32,6 +33,7 @@ export interface RecipeCreateRequest {
     prep_time?: number;
     cook_time?: number;
     servings?: number;
+    image_url?: string;  // S3 URL for recipe image
 }
 
 /**
@@ -46,6 +48,7 @@ export interface RecipeUpdateRequest {
     prep_time?: number;
     cook_time?: number;
     servings?: number;
+    image_url?: string;  // S3 URL for recipe image
 }
 
 /**

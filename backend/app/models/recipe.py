@@ -16,6 +16,7 @@ class RecipeBase(SQLModel):
     prep_time: int | None = None  # in minutes
     cook_time: int | None = None  # in minutes
     servings: int | None = None
+    image_url: str | None = None  # S3 URL for recipe image
 
 class Recipe(RecipeBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -46,3 +47,4 @@ class RecipeUpdate(SQLModel):
     cook_time: int | None = None  # in minutes
     servings: int | None = None
     restaurant_id: int | None = None
+    image_url: str | None = None  # S3 URL for recipe image

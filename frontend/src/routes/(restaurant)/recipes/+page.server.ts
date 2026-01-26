@@ -59,6 +59,7 @@ export const actions: Actions = {
         const prepTime = formData.get('prepTime');
         const cookTime = formData.get('cookTime');
         const servings = formData.get('servings');
+        const imageUrl = formData.get('imageUrl');
 
         // Validation
         if (!restaurantId || !title) {
@@ -88,6 +89,7 @@ export const actions: Actions = {
                     prep_time: prepTime ? parseInt(String(prepTime)) : undefined,
                     cook_time: cookTime ? parseInt(String(cookTime)) : undefined,
                     servings: servings ? parseInt(String(servings)) : undefined,
+                    image_url: imageUrl ? String(imageUrl) : undefined,
                 },
                 cookies
             );
@@ -120,6 +122,7 @@ export const actions: Actions = {
         const prepTime = formData.get('prepTime');
         const cookTime = formData.get('cookTime');
         const servings = formData.get('servings');
+        const imageUrl = formData.get('imageUrl');
 
         if (!recipeId || !restaurantId) {
             return fail(400, { 
@@ -147,6 +150,7 @@ export const actions: Actions = {
                     prep_time: prepTime ? parseInt(String(prepTime)) : undefined,
                     cook_time: cookTime ? parseInt(String(cookTime)) : undefined,
                     servings: servings ? parseInt(String(servings)) : undefined,
+                    image_url: imageUrl !== null ? String(imageUrl) : undefined,  // Allow empty string to remove image
                 },
                 cookies
             );
