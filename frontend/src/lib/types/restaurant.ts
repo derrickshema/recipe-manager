@@ -22,6 +22,7 @@ export interface Restaurant {
     cuisine_type?: string;
     address?: string;
     phone?: string;
+    logo_url?: string;
     approval_status: ApprovalStatus;
     created_at: string;
     updated_at: string;
@@ -38,6 +39,7 @@ export interface RestaurantCreateRequest {
     cuisine_type?: string;
     address?: string;
     phone?: string;
+    logo_url?: string;
 }
 
 /**
@@ -49,6 +51,7 @@ export interface RestaurantUpdateRequest {
     cuisine_type?: string;
     address?: string;
     phone?: string;
+    logo_url?: string;
     approval_status?: ApprovalStatus;
 }
 

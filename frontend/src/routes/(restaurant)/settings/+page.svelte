@@ -8,6 +8,9 @@
 
     // Reactive state
     let submitting = $state(false);
+    let uploadingLogo = $state(false);
+    let removingLogo = $state(false);
+    let logoPreview = $state<string | null>(null);
 
     // Derived from SSR data
     let restaurant = $derived(data.restaurant);
@@ -29,6 +32,8 @@
                 address: restaurant.address || '',
                 phone: restaurant.phone || ''
             };
+            // Reset logo preview when data refreshes
+            logoPreview = null;
         }
     });
 
@@ -44,6 +49,18 @@
                 return { class: 'bg-gray-100 text-gray-800', text: 'Suspended' };
             default:
                 return { class: 'bg-gray-100 text-gray-800', text: status };
+        }
+    }
+
+    function handleLogoSelect(event: Event) {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                logoPreview = e.target?.result as string;
+            };
+            reader.readAsDataURL(file);
         }
     }
 </script>
@@ -88,6 +105,93 @@
             <p class="text-muted-foreground">No restaurant found</p>
         </div>
     {:else}
+        <!-- Logo Section -->
+        <div class="bg-card border rounded-lg p-6 space-y-4">
+            <h2 class="text-lg font-semibold">Restaurant Logo</h2>
+            
+            <div class="flex items-start gap-6">
+                <!-- Logo Preview -->
+                <div class="flex-shrink-0">
+                    {#if logoPreview}
+                        <img 
+                            src={logoPreview} 
+                            alt="Logo preview" 
+                            class="w-32 h-32 object-cover rounded-lg border"
+                        />
+                    {:else if restaurant.logo_url}
+                        <img 
+                            src={restaurant.logo_url} 
+                            alt="{restaurant.restaurant_name} logo" 
+                            class="w-32 h-32 object-cover rounded-lg border"
+                        />
+                    {:else}
+                        <div class="w-32 h-32 bg-muted rounded-lg border flex items-center justify-center">
+                            <svg class="w-12 h-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                    {/if}
+                </div>
+
+                <!-- Upload/Remove Actions -->
+                <div class="flex-1 space-y-3">
+                    <p class="text-sm text-muted-foreground">
+                        Upload a logo for your restaurant. Recommended size: 256x256 pixels. Max file size: 5MB.
+                    </p>
+
+                    <!-- Upload Form -->
+                    <form 
+                        method="POST" 
+                        action="?/uploadLogo"
+                        enctype="multipart/form-data"
+                        use:enhance={() => {
+                            uploadingLogo = true;
+                            return async ({ update }) => {
+                                await update();
+                                uploadingLogo = false;
+                                logoPreview = null;
+                            };
+                        }}
+                        class="flex items-center gap-3"
+                    >
+                        <input type="hidden" name="restaurantId" value={restaurant.id} />
+                        <input 
+                            type="file" 
+                            name="logo" 
+                            id="logo"
+                            accept="image/jpeg,image/png,image/gif,image/webp"
+                            onchange={handleLogoSelect}
+                            class="text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer"
+                        />
+                        <Button type="submit" size="sm" disabled={uploadingLogo}>
+                            {uploadingLogo ? 'Uploading...' : 'Upload'}
+                        </Button>
+                    </form>
+
+                    <!-- Remove Logo -->
+                    {#if restaurant.logo_url}
+                        <form 
+                            method="POST" 
+                            action="?/removeLogo"
+                            use:enhance={() => {
+                                removingLogo = true;
+                                return async ({ update }) => {
+                                    await update();
+                                    removingLogo = false;
+                                };
+                            }}
+                        >
+                            <input type="hidden" name="restaurantId" value={restaurant.id} />
+                            <input type="hidden" name="logoUrl" value={restaurant.logo_url} />
+                            <Button type="submit" variant="danger" size="sm" disabled={removingLogo}>
+                                {removingLogo ? 'Removing...' : 'Remove Logo'}
+                            </Button>
+                        </form>
+                    {/if}
+                </div>
+            </div>
+        </div>
+
         <!-- Settings Form -->
         <form 
             method="POST" 

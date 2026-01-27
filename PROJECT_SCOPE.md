@@ -26,10 +26,10 @@
 - [x] Tenant-scoped data access
 - [x] Restaurant owner registration flow
 
-### 🟡 Restaurant Management
+### ✅ Restaurant Management
 - [x] Restaurant profile (name, address, phone, cuisine)
 - [x] Approval status workflow (pending → approved/rejected)
-- [ ] Restaurant logo/photos (S3 - infrastructure ready)
+- [x] Restaurant logo/photos (S3 upload)
 
 ### 🟡 Admin Dashboard
 - [x] System overview (stats)
@@ -234,3 +234,4 @@ The project is "complete" when:
 - **2026-01-27**: Implemented email verification on signup
 - **2026-01-27**: Added user management page (view, suspend, delete users)
 - **2026-01-27**: Login now requires verified email (except superadmin)
+- **2026-01-27**: Added restaurant logo upload feature (S3)

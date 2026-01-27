@@ -3,6 +3,7 @@ Upload routes for handling file uploads to S3.
 
 This module handles all file upload operations. Currently supports:
 - Recipe images
+- Restaurant logos
 
 The pattern is: Upload file first → Get URL → Use URL when creating/updating records
 This separates file handling from database operations for cleaner code.
@@ -154,6 +155,111 @@ async def delete_recipe_image(
         if "/recipes/" in file_url:
             # Extract everything from "recipes/" onwards
             key = "recipes/" + file_url.split("/recipes/")[1]
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid file URL format"
+            )
+        
+        success = delete_file(key)
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete file from storage"
+            )
+        
+        return {"message": "File deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error processing delete request: {str(e)}"
+        )
+
+
+# ==================== Restaurant Logo Uploads ====================
+
+@router.post("/restaurant-logo", response_model=UploadResponse)
+async def upload_restaurant_logo(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Upload a logo/photo for a restaurant.
+    
+    The uploaded image is stored in S3 under the 'restaurants/' folder.
+    Returns the URL which should then be used when updating a restaurant.
+    
+    Workflow:
+    1. Frontend uploads image here first
+    2. Gets back the S3 URL
+    3. Frontend includes that URL in the restaurant update request
+    
+    Args:
+        file: The image file to upload (JPEG, PNG, GIF, or WebP)
+        current_user: The authenticated user (ensures only logged-in users can upload)
+    
+    Returns:
+        UploadResponse with the S3 URL and filename
+    
+    Raises:
+        HTTPException 400: Invalid file type or file too large
+        HTTPException 500: S3 upload failed
+    """
+    # Validate the file
+    validate_image(file)
+    
+    # Read file content
+    content = await file.read()
+    
+    # Double-check size after reading
+    if len(content) > MAX_IMAGE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File too large. Maximum size is {MAX_IMAGE_SIZE // (1024 * 1024)}MB"
+        )
+    
+    # Upload to S3 under restaurants/ folder
+    url = upload_file(
+        file_data=content,
+        original_filename=file.filename or "logo.jpg",
+        content_type=file.content_type or "image/jpeg",
+        folder="restaurants"
+    )
+    
+    if not url:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to upload file to storage"
+        )
+    
+    return UploadResponse(
+        url=url,
+        filename=file.filename or "unknown"
+    )
+
+
+@router.delete("/restaurant-logo")
+async def delete_restaurant_logo(
+    file_url: str,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Delete a restaurant logo from S3.
+    
+    Args:
+        file_url: The full S3 URL of the file to delete
+        current_user: The authenticated user
+    
+    Returns:
+        Success message
+    """
+    try:
+        if "/restaurants/" in file_url:
+            key = "restaurants/" + file_url.split("/restaurants/")[1]
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

@@ -74,7 +74,7 @@ def generate_unique_filename(original_filename: str) -> str:
     return f"{unique_id}.{extension}"
 
 
-def upload_file(file_data: bytes, original_filename: str, content_type: str = "image/jpeg") -> str:
+def upload_file(file_data: bytes, original_filename: str, content_type: str = "image/jpeg", folder: str = "recipes") -> str:
     """
     Uploads a file to S3 and returns the URL.
     
@@ -82,6 +82,7 @@ def upload_file(file_data: bytes, original_filename: str, content_type: str = "i
         file_data: The file content as bytes
         original_filename: Original name of the file (used for extension)
         content_type: MIME type (e.g., "image/jpeg", "image/png")
+        folder: The folder/prefix to store the file under (e.g., "recipes", "restaurants")
     
     Returns:
         The URL where the file can be accessed
@@ -94,10 +95,13 @@ def upload_file(file_data: bytes, original_filename: str, content_type: str = "i
     # Generate a unique filename
     filename = generate_unique_filename(original_filename)
     
+    # Create the full key with folder
+    key = f"{folder}/{filename}"
+    
     # Upload the file
     s3.put_object(
         Bucket=S3_BUCKET_NAME,
-        Key=filename,
+        Key=key,
         Body=file_data,
         ContentType=content_type,
         # ACL='public-read'  # Uncomment if you want public access
@@ -106,10 +110,10 @@ def upload_file(file_data: bytes, original_filename: str, content_type: str = "i
     # Generate the URL
     if S3_ENDPOINT_URL:
         # LocalStack URL format
-        url = f"{S3_ENDPOINT_URL}/{S3_BUCKET_NAME}/{filename}"
+        url = f"{S3_ENDPOINT_URL}/{S3_BUCKET_NAME}/{key}"
     else:
         # Real AWS S3 URL format
-        url = f"https://{S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{filename}"
+        url = f"https://{S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{key}"
     
     return url
 

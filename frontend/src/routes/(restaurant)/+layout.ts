@@ -1,8 +1,9 @@
-// This file is kept for potential client-side universal load data
-// Authentication is now handled server-side in +layout.server.ts
+// This file passes through server data and can add client-specific data
 import type { LayoutLoad } from './$types';
 
-export const load: LayoutLoad = async () => {
-    // Client-side load can add any client-specific data here
-    return {};
+export const load: LayoutLoad = async ({ data }) => {
+    // Pass through server data (user, restaurant)
+    return {
+        ...data
+    };
 };

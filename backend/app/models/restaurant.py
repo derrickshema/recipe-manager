@@ -20,6 +20,7 @@ class RestaurantBase(SQLModel):
     cuisine_type: str | None = Field(default=None, max_length=50)
     address: str | None = Field(default=None, max_length=255)
     phone: str | None = Field(default=None, max_length=20)
+    logo_url: str | None = Field(default=None, max_length=500, description="URL to restaurant logo image")
 
 
 class Restaurant(RestaurantBase, table=True):
@@ -50,6 +51,7 @@ class RestaurantUpdate(SQLModel):
     cuisine_type: str | None = None
     address: str | None = None
     phone: str | None = None
+    logo_url: str | None = None
     approval_status: ApprovalStatus | None = None
 
 class RestaurantOwnerRegistration(SQLModel):
