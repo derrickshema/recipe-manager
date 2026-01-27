@@ -11,8 +11,8 @@ from ..models.user import User, UserCreate, UserRead, Token, SystemRole, UserLog
 from ..models.membership import Membership, OrgRole
 from ..models.restaurant import Restaurant, RestaurantOwnerRegistration
 from pydantic import BaseModel, EmailStr
-from ..utilities.auth_utils import verify_password, hash_password, create_access_token, create_password_reset_token, verify_password_reset_token
-from ..utilities.email import send_password_reset_email
+from ..utilities.auth_utils import verify_password, hash_password, create_access_token, create_password_reset_token, verify_password_reset_token, create_email_verification_token, verify_email_verification_token
+from ..utilities.email import send_password_reset_email, send_verification_email
 
 # Cookie configuration
 COOKIE_NAME = "access_token"
@@ -29,6 +29,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 async def register_user(user_in: UserCreate, session: Session = Depends(get_session)):
     """
     Registers a new user with both system role and optional organization role.
+    Sends a verification email to confirm the user's email address.
     """
     # Check if username already exists
     existing_user = session.exec(select(User).where(User.username == user_in.username)).first()
@@ -54,7 +55,7 @@ async def register_user(user_in: UserCreate, session: Session = Depends(get_sess
         first_name=user_in.first_name,
         last_name=user_in.last_name,
         role=system_role,
-        # Remove restaurant_id from User model as it will be handled through Membership
+        email_verified=False,  # New users start with unverified email
     )
 
     session.add(db_user)
@@ -70,6 +71,17 @@ async def register_user(user_in: UserCreate, session: Session = Depends(get_sess
         )
         session.add(membership)
         session.commit()
+
+    # Send verification email
+    if db_user.email:
+        verification_token = create_email_verification_token(db_user.email)
+        email_sent = send_verification_email(db_user.email, verification_token, db_user.first_name)
+        if email_sent:
+            print(f"Verification email sent to {db_user.email}")
+        else:
+            print(f"WARNING: Failed to send verification email to {db_user.email}")
+    else:
+        print(f"WARNING: User {db_user.username} has no email, skipping verification email")
 
     return db_user
 
@@ -103,7 +115,8 @@ async def register_restaurant_owner(
         email=registration_data.email,
         first_name=registration_data.first_name,
         last_name=registration_data.last_name,
-        role=SystemRole.RESTAURANT_OWNER  # Restaurant owners get RESTAURANT_OWNER role
+        role=SystemRole.RESTAURANT_OWNER,  # Restaurant owners get RESTAURANT_OWNER role
+        email_verified=False,  # New users start with unverified email
     )
     
     session.add(db_user)
@@ -132,6 +145,17 @@ async def register_restaurant_owner(
     session.add(membership)
     session.commit()
     
+    # Send verification email
+    if db_user.email:
+        verification_token = create_email_verification_token(db_user.email)
+        email_sent = send_verification_email(db_user.email, verification_token, db_user.first_name)
+        if email_sent:
+            print(f"Verification email sent to {db_user.email}")
+        else:
+            print(f"WARNING: Failed to send verification email to {db_user.email}")
+    else:
+        print(f"WARNING: User {db_user.username} has no email, skipping verification email")
+    
     return db_user
 
 # --- Login Endpoint ---
@@ -155,6 +179,13 @@ async def login_for_access_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Check if email is verified (skip for superadmin)
+    if not user.email_verified and user.role != SystemRole.SUPERADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Please verify your email before logging in. Check your inbox for the verification link.",
         )
 
     # Create the access token
@@ -305,4 +336,94 @@ async def reset_password(
     
     return {
         "message": "Password has been reset successfully. You can now log in with your new password."
+    }
+
+
+# --- Email Verification Request/Response Models ---
+class VerifyEmailRequest(BaseModel):
+    """Request body for email verification endpoint."""
+    token: str
+
+
+class ResendVerificationRequest(BaseModel):
+    """Request body for resending verification email."""
+    email: EmailStr
+
+
+# --- Verify Email Endpoint ---
+@router.post("/verify-email")
+async def verify_email(
+    request: VerifyEmailRequest,
+    session: Session = Depends(get_session)
+):
+    """
+    Verifies a user's email address using the verification token.
+    
+    The token must be:
+    1. Valid (not tampered with)
+    2. Not expired (24 hour limit)
+    3. Have the correct purpose claim
+    """
+    # Verify the token
+    email = verify_email_verification_token(request.token)
+    
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired verification link. Please request a new verification email."
+        )
+    
+    # Find the user
+    user = session.exec(select(User).where(User.email == email)).first()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired verification link. Please request a new verification email."
+        )
+    
+    # Check if already verified
+    if user.email_verified:
+        return {
+            "message": "Email is already verified. You can log in to your account."
+        }
+    
+    # Mark email as verified
+    user.email_verified = True
+    session.add(user)
+    session.commit()
+    
+    return {
+        "message": "Email verified successfully! You can now log in to your account."
+    }
+
+
+# --- Resend Verification Email Endpoint ---
+@router.post("/resend-verification")
+async def resend_verification_email(
+    request: ResendVerificationRequest,
+    session: Session = Depends(get_session)
+):
+    """
+    Resends the verification email to a user who hasn't verified yet.
+    
+    For security, always returns success even if email doesn't exist
+    (prevents email enumeration attacks).
+    """
+    # Find user by email
+    user = session.exec(select(User).where(User.email == request.email)).first()
+    
+    if user and not user.email_verified:
+        # Generate new verification token
+        verification_token = create_email_verification_token(user.email)
+        
+        # Send the verification email
+        email_sent = send_verification_email(user.email, verification_token, user.first_name)
+        
+        if not email_sent:
+            print(f"Failed to send verification email to {user.email}")
+    
+    # Always return success to prevent email enumeration
+    return {
+        "message": "If an account with that email exists and is not yet verified, a verification link has been sent."
     }

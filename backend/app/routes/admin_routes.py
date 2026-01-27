@@ -9,6 +9,7 @@ from typing import List
 from ..db.session import get_session
 from ..models.user import User, SystemRole, UserRead
 from ..models.restaurant import Restaurant, RestaurantRead, ApprovalStatus
+from ..models.membership import Membership
 from ..utilities.rbac import require_superadmin
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -96,6 +97,70 @@ async def unsuspend_user(
     session.refresh(user)
     
     return {"message": f"User {user.username} has been unsuspended", "user": user}
+
+
+@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user(
+    user_id: int,
+    delete_owned_restaurants: bool = Query(False, description="Also delete restaurants owned by this user"),
+    current_user: User = Depends(require_superadmin),
+    session: Session = Depends(get_session)
+):
+    """
+    Delete a user and their memberships. Superadmin only.
+    
+    If delete_owned_restaurants=True, also deletes restaurants where the user
+    is the only admin member. Otherwise, those restaurants are preserved.
+    
+    Cannot delete superadmin users.
+    """
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.role == SystemRole.SUPERADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot delete superadmin users"
+        )
+    
+    # Get user's memberships
+    memberships = session.exec(
+        select(Membership).where(Membership.user_id == user_id)
+    ).all()
+    
+    # If deleting owned restaurants, find and delete them
+    if delete_owned_restaurants:
+        for membership in memberships:
+            # Check if user is the only admin for this restaurant
+            admin_count = len(session.exec(
+                select(Membership).where(
+                    Membership.restaurant_id == membership.restaurant_id,
+                    Membership.role == "restaurant_admin"
+                )
+            ).all())
+            
+            if admin_count == 1 and membership.role == "restaurant_admin":
+                # User is the only admin, delete the restaurant
+                restaurant = session.get(Restaurant, membership.restaurant_id)
+                if restaurant:
+                    # Delete all memberships for this restaurant first
+                    restaurant_memberships = session.exec(
+                        select(Membership).where(Membership.restaurant_id == restaurant.id)
+                    ).all()
+                    for rm in restaurant_memberships:
+                        session.delete(rm)
+                    session.delete(restaurant)
+    
+    # Delete user's memberships
+    for membership in memberships:
+        session.delete(membership)
+    
+    # Delete the user
+    session.delete(user)
+    session.commit()
+    
+    return None
 
 
 # --- Restaurant Management ---

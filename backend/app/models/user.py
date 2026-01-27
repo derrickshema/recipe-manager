@@ -47,6 +47,7 @@ class User(UserBase, table=True):
     """User model for database table."""
     id: int | None = Field(default=None, primary_key=True)
     hashed_password: str = Field(max_length=255) # Store hashed password
+    email_verified: bool = Field(default=False, description="Whether the user's email has been verified")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
@@ -79,6 +80,7 @@ class UserRead(UserBase):
     """Model for reading user data."""
     id: int
     role: SystemRole
+    email_verified: bool = False
 
 class UserUpdate(SQLModel):
     """Model for updating user data."""

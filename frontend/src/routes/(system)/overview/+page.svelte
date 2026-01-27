@@ -48,5 +48,11 @@
             <p class="text-muted-foreground">Manage restaurant registrations and access</p>
             <span class="text-primary hover:underline mt-4 inline-block">View Restaurants →</span>
         </a>
+        
+        <a href="/users" class="bg-card p-6 rounded-lg shadow hover:shadow-lg transition-shadow">
+            <h2 class="text-lg font-semibold mb-2">Users</h2>
+            <p class="text-muted-foreground">Manage user accounts and permissions</p>
+            <span class="text-primary hover:underline mt-4 inline-block">View Users →</span>
+        </a>
     </div>
 </div>

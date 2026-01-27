@@ -70,41 +70,9 @@ export const actions: Actions = {
                 });
             }
 
-            // Step 2: Auto-login after successful registration
-            const loginResponse = await fetch(`${API_BASE_URL}/auth/token`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ username, password }),
-            });
-
-            if (!loginResponse.ok) {
-                // Registration succeeded but login failed - redirect to login page
-                throw redirect(303, '/login?registered=true');
-            }
-
-            const userData = await loginResponse.json();
-
-            // Extract and set the httpOnly cookie
-            const setCookieHeader = loginResponse.headers.get('set-cookie');
-            if (setCookieHeader) {
-                const tokenMatch = setCookieHeader.match(/access_token=([^;]+)/);
-                if (tokenMatch) {
-                    cookies.set('access_token', tokenMatch[1], {
-                        path: '/',
-                        httpOnly: true,
-                        secure: process.env.NODE_ENV === 'production',
-                        sameSite: 'lax',
-                        maxAge: 60 * 60 * 24 * 7
-                    });
-                }
-            }
-
-            return {
-                success: true,
-                user: userData
-            };
+            // Registration successful - redirect to verify email page
+            // Don't auto-login, require email verification first
+            throw redirect(303, `/verify-email?registered=true&email=${encodeURIComponent(email)}`);
         } catch (err) {
             if (err instanceof Response || (err as any)?.status === 303) {
                 throw err; // Re-throw redirects

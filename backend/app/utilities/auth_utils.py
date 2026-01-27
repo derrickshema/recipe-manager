@@ -85,3 +85,48 @@ def verify_password_reset_token(token: str) -> str | None:
         
     except jwt.JWTError:
         return None
+
+
+# ---Email Verification Tokens---
+VERIFICATION_TOKEN_EXPIRE_HOURS = 24  # 24 hours
+
+def create_email_verification_token(email: str) -> str:
+    """
+    Create a JWT token for email verification.
+    
+    Uses a 'purpose' claim to distinguish from other token types.
+    """
+    expire = datetime.now(timezone.utc) + timedelta(hours=VERIFICATION_TOKEN_EXPIRE_HOURS)
+    
+    to_encode = {
+        "sub": email,
+        "purpose": "email_verification",
+        "exp": expire
+    }
+    
+    return jwt.encode(to_encode, os.getenv("SECRET_KEY"), algorithm=os.getenv("ALGORITHM"))
+
+
+def verify_email_verification_token(token: str) -> str | None:
+    """
+    Verify an email verification token and return the email.
+    
+    Returns:
+        The email address if token is valid, None otherwise.
+    """
+    try:
+        payload = jwt.decode(
+            token, 
+            os.getenv("SECRET_KEY"), 
+            algorithms=[os.getenv("ALGORITHM")]
+        )
+        
+        # Verify this is actually an email verification token
+        if payload.get("purpose") != "email_verification":
+            return None
+        
+        email: str = payload.get("sub")
+        return email
+        
+    except jwt.JWTError:
+        return None

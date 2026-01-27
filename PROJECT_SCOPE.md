@@ -18,7 +18,7 @@
 - [x] Organization roles (restaurant_admin, employee)
 - [x] RBAC middleware
 - [x] Password reset via email (Resend)
-- [ ] Email verification on signup
+- [x] Email verification on signup
 
 ### ✅ Multi-tenancy
 - [x] Restaurant model with approval workflow
@@ -30,6 +30,12 @@
 - [x] Restaurant profile (name, address, phone, cuisine)
 - [x] Approval status workflow (pending → approved/rejected)
 - [ ] Restaurant logo/photos (S3 - infrastructure ready)
+
+### 🟡 Admin Dashboard
+- [x] System overview (stats)
+- [x] Restaurant management (approve/reject/suspend)
+- [x] User management (view, suspend, delete)
+- [ ] User deletion cascade (restaurants, memberships)
 
 ### 🟡 Menu/Recipe Management
 - [x] Recipe CRUD (create, read, update, delete)
@@ -71,9 +77,10 @@
 
 ## Phase 3: Notifications & Communication
 
-### ⬜ Email Notifications
+### 🟡 Email Notifications
 - [ ] Welcome email on registration
-- [ ] Password reset email
+- [x] Password reset email
+- [x] Email verification on signup
 - [ ] Order confirmation email
 - [ ] Order status update emails
 - [ ] Restaurant approval/rejection email
@@ -224,3 +231,6 @@ The project is "complete" when:
 - **2026-01-26**: Implemented S3 image upload for recipes using LocalStack
 - **2026-01-26**: Set up Docker Desktop and LocalStack container
 - **2026-01-26**: Implemented password reset via email using Resend
+- **2026-01-27**: Implemented email verification on signup
+- **2026-01-27**: Added user management page (view, suspend, delete users)
+- **2026-01-27**: Login now requires verified email (except superadmin)
