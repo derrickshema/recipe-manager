@@ -32,8 +32,15 @@ class Restaurant(RestaurantBase, table=True):
         sa_column_kwargs={"onupdate": lambda: datetime.now(timezone.utc)}
     )
 
-    recipes: list["Recipe"] = Relationship(back_populates="restaurant")
-    memberships: list["Membership"] = Relationship(back_populates="restaurant")
+    # Cascade delete: when restaurant is deleted, delete all its recipes and memberships
+    recipes: list["Recipe"] = Relationship(
+        back_populates="restaurant",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
+    memberships: list["Membership"] = Relationship(
+        back_populates="restaurant",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
 
 class RestaurantCreate(RestaurantBase):
     pass

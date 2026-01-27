@@ -9,7 +9,7 @@ from typing import List
 from ..db.session import get_session
 from ..models.user import User, SystemRole, UserRead
 from ..models.restaurant import Restaurant, RestaurantRead, ApprovalStatus
-from ..models.membership import Membership
+from ..models.membership import Membership, OrgRole
 from ..utilities.rbac import require_superadmin
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -110,7 +110,7 @@ async def delete_user(
     Delete a user and their memberships. Superadmin only.
     
     If delete_owned_restaurants=True, also deletes restaurants where the user
-    is the only admin member. Otherwise, those restaurants are preserved.
+    is the only admin member (cascades to recipes and all memberships for those restaurants).
     
     Cannot delete superadmin users.
     """
@@ -124,39 +124,33 @@ async def delete_user(
             detail="Cannot delete superadmin users"
         )
     
-    # Get user's memberships
-    memberships = session.exec(
-        select(Membership).where(Membership.user_id == user_id)
-    ).all()
-    
-    # If deleting owned restaurants, find and delete them
+    # If deleting owned restaurants, find and delete restaurants where user is sole admin
     if delete_owned_restaurants:
-        for membership in memberships:
+        # Get user's admin memberships
+        admin_memberships = session.exec(
+            select(Membership).where(
+                Membership.user_id == user_id,
+                Membership.role == OrgRole.RESTAURANT_ADMIN
+            )
+        ).all()
+        
+        for membership in admin_memberships:
             # Check if user is the only admin for this restaurant
             admin_count = len(session.exec(
                 select(Membership).where(
                     Membership.restaurant_id == membership.restaurant_id,
-                    Membership.role == "restaurant_admin"
+                    Membership.role == OrgRole.RESTAURANT_ADMIN
                 )
             ).all())
             
-            if admin_count == 1 and membership.role == "restaurant_admin":
+            if admin_count == 1:
                 # User is the only admin, delete the restaurant
+                # Cascade will automatically delete recipes and all memberships
                 restaurant = session.get(Restaurant, membership.restaurant_id)
                 if restaurant:
-                    # Delete all memberships for this restaurant first
-                    restaurant_memberships = session.exec(
-                        select(Membership).where(Membership.restaurant_id == restaurant.id)
-                    ).all()
-                    for rm in restaurant_memberships:
-                        session.delete(rm)
                     session.delete(restaurant)
     
-    # Delete user's memberships
-    for membership in memberships:
-        session.delete(membership)
-    
-    # Delete the user
+    # Delete the user (cascade will automatically delete their memberships)
     session.delete(user)
     session.commit()
     

@@ -54,7 +54,11 @@ class User(UserBase, table=True):
         sa_column_kwargs={"onupdate": lambda: datetime.now(timezone.utc)}
     ) 
 
-    memberships: list["Membership"] = Relationship(back_populates="user")
+    # Cascade delete: when user is deleted, delete all their memberships
+    memberships: list["Membership"] = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
 
 class UserCreate(UserBase):
     """Model for creating a new user."""

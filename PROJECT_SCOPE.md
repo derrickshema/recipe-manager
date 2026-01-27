@@ -31,18 +31,16 @@
 - [x] Approval status workflow (pending → approved/rejected)
 - [x] Restaurant logo/photos (S3 upload)
 
-### 🟡 Admin Dashboard
+### ✅ Admin Dashboard
 - [x] System overview (stats)
 - [x] Restaurant management (approve/reject/suspend)
 - [x] User management (view, suspend, delete)
-- [ ] User deletion cascade (restaurants, memberships)
+- [x] User deletion cascade (restaurants, memberships)
 
-### 🟡 Menu/Recipe Management
+### ✅ Menu/Recipe Management
 - [x] Recipe CRUD (create, read, update, delete)
 - [x] Recipe fields (title, description, ingredients, instructions)
 - [x] Recipe images (S3 upload with LocalStack)
-- [ ] Menu categories
-- [ ] Item availability toggle (sold out)
 
 ### ⬜ Staff Management
 - [ ] Invite employee by email
