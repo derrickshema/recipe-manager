@@ -10,7 +10,9 @@ from ..db.session import get_session
 from ..models.user import User, UserCreate, UserRead, Token, SystemRole, UserLogin
 from ..models.membership import Membership, OrgRole
 from ..models.restaurant import Restaurant, RestaurantOwnerRegistration
-from ..utilities.auth_utils import verify_password, hash_password, create_access_token
+from pydantic import BaseModel, EmailStr
+from ..utilities.auth_utils import verify_password, hash_password, create_access_token, create_password_reset_token, verify_password_reset_token
+from ..utilities.email import send_password_reset_email
 
 # Cookie configuration
 COOKIE_NAME = "access_token"
@@ -209,3 +211,98 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
     Requires a valid JWT in the Authorization header or cookie.
     """
     return current_user
+
+
+# --- Password Reset Request/Response Models ---
+class ForgotPasswordRequest(BaseModel):
+    """Request body for forgot password endpoint."""
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    """Request body for reset password endpoint."""
+    token: str
+    new_password: str
+
+
+# --- Forgot Password Endpoint ---
+@router.post("/forgot-password")
+async def forgot_password(
+    request: ForgotPasswordRequest,
+    session: Session = Depends(get_session)
+):
+    """
+    Initiates the password reset process.
+    
+    Sends a password reset email if the email exists in the system.
+    For security, always returns success even if email doesn't exist
+    (prevents email enumeration attacks).
+    """
+    # Find user by email
+    user = session.exec(select(User).where(User.email == request.email)).first()
+    
+    if user:
+        # Generate password reset token
+        reset_token = create_password_reset_token(user.email)
+        
+        # Send the reset email
+        email_sent = send_password_reset_email(user.email, reset_token)
+        
+        if not email_sent:
+            # Log the error but don't expose it to user
+            print(f"Failed to send password reset email to {user.email}")
+    
+    # Always return success to prevent email enumeration
+    # An attacker shouldn't be able to determine if an email exists
+    return {
+        "message": "If an account with that email exists, a password reset link has been sent."
+    }
+
+
+# --- Reset Password Endpoint ---
+@router.post("/reset-password")
+async def reset_password(
+    request: ResetPasswordRequest,
+    session: Session = Depends(get_session)
+):
+    """
+    Resets the user's password using a valid reset token.
+    
+    The token must be:
+    1. Valid (not tampered with)
+    2. Not expired (1 hour limit)
+    3. Have the correct purpose claim
+    """
+    # Verify the token
+    email = verify_password_reset_token(request.token)
+    
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token. Please request a new password reset."
+        )
+    
+    # Find the user
+    user = session.exec(select(User).where(User.email == email)).first()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token. Please request a new password reset."
+        )
+    
+    # Validate new password (basic validation - you can make this stricter)
+    if len(request.new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters long."
+        )
+    
+    # Update the password
+    user.hashed_password = hash_password(request.new_password)
+    session.add(user)
+    session.commit()
+    
+    return {
+        "message": "Password has been reset successfully. You can now log in with your new password."
+    }

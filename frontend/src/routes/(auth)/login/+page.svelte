@@ -86,6 +86,12 @@
 			required
 		/>
 
+		<div class="text-right">
+			<a href="/forgot-password" class="text-sm text-primary hover:underline">
+				Forgot password?
+			</a>
+		</div>
+
 		{#if form?.error}
 			<div class="text-sm text-destructive">{form.error}</div>
 		{/if}

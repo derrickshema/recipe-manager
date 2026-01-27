@@ -39,3 +39,49 @@ def decode_access_token(token: str) -> dict:
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"}, # Standard header for OAuth2
         )
+
+
+# ---Password Reset Tokens---
+RESET_TOKEN_EXPIRE_MINUTES = 60  # 1 hour
+
+def create_password_reset_token(email: str) -> str:
+    """
+    Create a JWT token for password reset.
+    
+    Uses a different 'purpose' claim to distinguish it from access tokens.
+    This prevents someone from using a reset token as an auth token.
+    """
+    expire = datetime.now(timezone.utc) + timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES)
+    
+    to_encode = {
+        "sub": email,
+        "purpose": "password_reset",  # Important: distinguishes from access tokens
+        "exp": expire
+    }
+    
+    return jwt.encode(to_encode, os.getenv("SECRET_KEY"), algorithm=os.getenv("ALGORITHM"))
+
+
+def verify_password_reset_token(token: str) -> str | None:
+    """
+    Verify a password reset token and return the email.
+    
+    Returns:
+        The email address if token is valid, None otherwise.
+    """
+    try:
+        payload = jwt.decode(
+            token, 
+            os.getenv("SECRET_KEY"), 
+            algorithms=[os.getenv("ALGORITHM")]
+        )
+        
+        # Verify this is actually a password reset token
+        if payload.get("purpose") != "password_reset":
+            return None
+        
+        email: str = payload.get("sub")
+        return email
+        
+    except jwt.JWTError:
+        return None

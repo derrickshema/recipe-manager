@@ -17,7 +17,7 @@
 - [x] System roles (superadmin, restaurant_owner, customer)
 - [x] Organization roles (restaurant_admin, employee)
 - [x] RBAC middleware
-- [ ] Password reset via email
+- [x] Password reset via email (Resend)
 - [ ] Email verification on signup
 
 ### ✅ Multi-tenancy
@@ -29,13 +29,12 @@
 ### 🟡 Restaurant Management
 - [x] Restaurant profile (name, address, phone, cuisine)
 - [x] Approval status workflow (pending → approved/rejected)
-- [ ] Operating hours
-- [ ] Restaurant logo/photos (S3)
+- [ ] Restaurant logo/photos (S3 - infrastructure ready)
 
 ### 🟡 Menu/Recipe Management
 - [x] Recipe CRUD (create, read, update, delete)
 - [x] Recipe fields (title, description, ingredients, instructions)
-- [ ] Recipe images (S3 upload)
+- [x] Recipe images (S3 upload with LocalStack)
 - [ ] Menu categories
 - [ ] Item availability toggle (sold out)
 
@@ -83,11 +82,12 @@
 
 ## Phase 4: DevOps & Production
 
-### ⬜ Containerization
+### 🟡 Containerization
 - [ ] Backend Dockerfile
 - [ ] Frontend Dockerfile
 - [ ] docker-compose.yml for local dev
-- [ ] Docker networking
+- [x] Docker Desktop installed
+- [x] LocalStack container for S3 emulation
 
 ### ⬜ CI/CD
 - [ ] GitHub Actions workflow
@@ -221,3 +221,6 @@ The project is "complete" when:
 *Add scope changes and decisions here:*
 
 - **2026-01-26**: Initial scope document created
+- **2026-01-26**: Implemented S3 image upload for recipes using LocalStack
+- **2026-01-26**: Set up Docker Desktop and LocalStack container
+- **2026-01-26**: Implemented password reset via email using Resend
