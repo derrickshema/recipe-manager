@@ -2,19 +2,13 @@ from datetime import datetime, timezone
 import re
 from sqlmodel import Column, Field, Relationship, SQLModel, Enum
 from pydantic import field_validator, EmailStr
-import enum
+from .enums import SystemRole
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .membership import Membership
 
-from .membership import OrgRole
-
-class SystemRole(str, enum.Enum):
-    SUPERADMIN = "superadmin"        # App admin - manages restaurants, owners, employees, customers
-    CUSTOMER = "customer"            # End user who orders food from restaurants
-    RESTAURANT_OWNER = "restaurant_owner"  # Restaurant owner (can create/manage restaurants)
-    SUSPENDED = "suspended"          # Account suspended
+from .enums import OrgRole
 
 class UserBase(SQLModel):
     """
@@ -34,14 +28,14 @@ class UserBase(SQLModel):
     def validate_username(cls, v):
         if not re.match(r'^[a-zA-Z0-9_]+$', v):
             raise ValueError('Username must be alphanumeric with underscores only')
-        return v
+        return v.tolower()
     
     @field_validator('email')
     def validate_email(cls, v):
         email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
         if not re.match(email_regex, v):
             raise ValueError('Invalid email format')
-        return v
+        return v.lower()
 
 class User(UserBase, table=True):
     """User model for database table."""

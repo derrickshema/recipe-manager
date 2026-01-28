@@ -1,18 +1,11 @@
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 from sqlmodel import Field, Relationship, SQLModel
-import enum
+from .enums import ApprovalStatus
 
 if TYPE_CHECKING:
     from .recipe import Recipe
     from .membership import Membership
-
-
-class ApprovalStatus(str, enum.Enum):
-    PENDING = "pending"      # Awaiting admin approval
-    APPROVED = "approved"    # Approved and active
-    REJECTED = "rejected"    # Rejected by admin
-    SUSPENDED = "suspended"  # Suspended by admin
 
 
 class RestaurantBase(SQLModel):

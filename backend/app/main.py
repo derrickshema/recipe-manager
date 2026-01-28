@@ -5,6 +5,7 @@ from .db.database import engine
 from .routes import recipe_routes, restaurant_routes, auth_routes, admin_routes, upload_routes
 from fastapi.middleware.cors import CORSMiddleware
 
+# Define lifespan event to create database tables on startup
 async def lifespan(app: FastAPI):
     SQLModel.metadata.create_all(engine)
     yield
