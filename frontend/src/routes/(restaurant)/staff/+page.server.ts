@@ -52,7 +52,48 @@ export const load: PageServerLoad = async ({ cookies }) => {
  */
 export const actions: Actions = {
     /**
-     * Add a new staff member by email
+     * Invite a new staff member by email (sends invitation email)
+     */
+    invite: async ({ request, cookies }) => {
+        const formData = await request.formData();
+        const restaurantId = formData.get('restaurantId');
+        const email = formData.get('email');
+        const role = formData.get('role');
+
+        if (!restaurantId || !email || !role) {
+            return fail(400, { 
+                action: 'invite',
+                error: 'Restaurant ID, email, and role are required',
+                values: { email, role }
+            });
+        }
+
+        try {
+            await serverApi.post(
+                `/restaurants/${restaurantId}/invite`,
+                {
+                    email: String(email),
+                    role: String(role)
+                },
+                cookies
+            );
+
+            return { 
+                action: 'invite',
+                success: true, 
+                message: `Invitation sent to ${email}` 
+            };
+        } catch (error: any) {
+            return fail(error.status || 500, { 
+                action: 'invite',
+                error: error.body?.detail || 'Failed to send invitation',
+                values: { email, role }
+            });
+        }
+    },
+
+    /**
+     * Add a new staff member by email (existing user only)
      */
     add: async ({ request, cookies }) => {
         const formData = await request.formData();

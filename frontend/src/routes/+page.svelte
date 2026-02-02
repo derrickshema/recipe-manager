@@ -28,10 +28,10 @@
 		</p>
 
 		<div class="flex flex-col sm:flex-row gap-4">
-			<Button on:click={() => goto('/register')} size="lg" class="bg-blue-600 hover:bg-blue-700 text-white">
+			<Button onclick={() => goto('/register')} size="lg" class="bg-blue-600 hover:bg-blue-700 text-white">
 				Get Started
 			</Button>
-			<Button on:click={() => goto('/login')} variant="secondary" size="lg" class="bg-gray-700 hover:bg-gray-800 text-white">
+			<Button onclick={() => goto('/login')} variant="secondary" size="lg" class="bg-gray-700 hover:bg-gray-800 text-white">
 				Log In
 			</Button>
 		</div>
@@ -81,7 +81,7 @@
 			<p class="text-xl text-muted-foreground mb-6">
 				Join our platform and reach thousands of hungry customers
 			</p>
-			<Button on:click={() => goto('/register/restaurant')} size="lg" class="bg-green-600 hover:bg-green-700 text-white">
+			<Button onclick={() => goto('/register/restaurant')} size="lg" class="bg-green-600 hover:bg-green-700 text-white">
 				List Your Restaurant
 			</Button>
 		</div>

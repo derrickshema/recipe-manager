@@ -28,7 +28,7 @@ class UserBase(SQLModel):
     def validate_username(cls, v):
         if not re.match(r'^[a-zA-Z0-9_]+$', v):
             raise ValueError('Username must be alphanumeric with underscores only')
-        return v.tolower()
+        return v.lower()
     
     @field_validator('email')
     def validate_email(cls, v):

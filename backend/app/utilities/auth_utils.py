@@ -130,3 +130,54 @@ def verify_email_verification_token(token: str) -> str | None:
         
     except jwt.JWTError:
         return None
+
+
+# ---Staff Invitation Tokens---
+INVITATION_TOKEN_EXPIRE_DAYS = 7  # 7 days
+
+def create_staff_invitation_token(email: str, restaurant_id: int, role: str) -> str:
+    """
+    Create a JWT token for staff invitation.
+    
+    The token encodes the email, restaurant_id, and role so that
+    when the user registers or accepts, we know which restaurant to add them to.
+    """
+    expire = datetime.now(timezone.utc) + timedelta(days=INVITATION_TOKEN_EXPIRE_DAYS)
+    
+    to_encode = {
+        "sub": email,
+        "restaurant_id": restaurant_id,
+        "role": role,
+        "purpose": "staff_invitation",
+        "exp": expire
+    }
+    
+    return jwt.encode(to_encode, os.getenv("SECRET_KEY"), algorithm=os.getenv("ALGORITHM"))
+
+
+def verify_staff_invitation_token(token: str) -> dict | None:
+    """
+    Verify a staff invitation token and return the payload.
+    
+    Returns:
+        A dict with email, restaurant_id, and role if valid, None otherwise.
+    """
+    try:
+        payload = jwt.decode(
+            token, 
+            os.getenv("SECRET_KEY"), 
+            algorithms=[os.getenv("ALGORITHM")]
+        )
+        
+        # Verify this is actually a staff invitation token
+        if payload.get("purpose") != "staff_invitation":
+            return None
+        
+        return {
+            "email": payload.get("sub"),
+            "restaurant_id": payload.get("restaurant_id"),
+            "role": payload.get("role")
+        }
+        
+    except jwt.JWTError:
+        return None

@@ -8,10 +8,10 @@
     let { data, form } = $props();
 
     // Reactive state
-    let showAddModal = $state(false);
+    let showInviteModal = $state(false);
     let submitting = $state(false);
-    let newMemberEmail = $state('');
-    let newMemberRole = $state<string>(OrgRole.EMPLOYEE);
+    let inviteEmail = $state('');
+    let inviteRole = $state<string>(OrgRole.EMPLOYEE);
 
     // Derived from SSR data
     let restaurant = $derived(data.restaurant);
@@ -39,16 +39,22 @@
         }
     }
 
-    function closeAddModal() {
-        showAddModal = false;
-        newMemberEmail = '';
-        newMemberRole = OrgRole.EMPLOYEE;
+    function closeInviteModal() {
+        showInviteModal = false;
+        inviteEmail = '';
+        inviteRole = OrgRole.EMPLOYEE;
+    }
+
+    function openInviteModal() {
+        console.log('openInviteModal called, showInviteModal:', showInviteModal);
+        showInviteModal = true;
+        console.log('showInviteModal after:', showInviteModal);
     }
 
     // Close modal on successful action
     $effect(() => {
-        if (form?.success && form?.action === 'add') {
-            closeAddModal();
+        if (form?.success && (form?.action === 'invite' || form?.action === 'add')) {
+            closeInviteModal();
         }
     });
 </script>
@@ -65,7 +71,7 @@
                 <p class="text-muted-foreground mt-1">{restaurant.restaurant_name}</p>
             {/if}
         </div>
-        <Button onclick={() => showAddModal = true}>+ Add Staff Member</Button>
+        <Button onclick={openInviteModal}>+ Invite Staff Member</Button>
     </div>
 
     <!-- Messages -->
@@ -89,7 +95,7 @@
     {#if members.length === 0}
         <div class="text-center py-12 bg-muted/30 rounded-lg">
             <p class="text-muted-foreground mb-4">No staff members yet</p>
-            <Button onclick={() => showAddModal = true}>Add your first staff member</Button>
+            <Button onclick={openInviteModal}>Invite your first staff member</Button>
         </div>
     {:else}
         <div class="bg-card border rounded-lg overflow-hidden">
@@ -182,12 +188,12 @@
     {/if}
 </div>
 
-<!-- Add Staff Modal -->
-{#if showAddModal}
-    <Modal title="Add Staff Member" onClose={closeAddModal}>
+<!-- Invite Staff Modal -->
+{#if showInviteModal}
+    <Modal open={true} title="Invite Staff Member" onClose={closeInviteModal}>
         <form 
             method="POST" 
-            action="?/add"
+            action="?/invite"
             class="space-y-4"
             use:enhance={() => {
                 submitting = true;
@@ -205,13 +211,13 @@
                     type="email" 
                     id="email" 
                     name="email" 
-                    bind:value={newMemberEmail}
+                    bind:value={inviteEmail}
                     placeholder="staff@example.com"
                     class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary"
                     required
                 />
                 <p class="text-xs text-muted-foreground mt-1">
-                    The user must already have an account in the system.
+                    An invitation email will be sent to this address.
                 </p>
             </div>
 
@@ -220,7 +226,7 @@
                 <select 
                     id="role" 
                     name="role" 
-                    bind:value={newMemberRole}
+                    bind:value={inviteRole}
                     class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary"
                 >
                     <option value={OrgRole.EMPLOYEE}>Employee - Can view recipes</option>
@@ -228,10 +234,19 @@
                 </select>
             </div>
 
+            <div class="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 p-3 rounded text-sm">
+                <strong>How it works:</strong>
+                <ul class="list-disc ml-4 mt-1 space-y-1">
+                    <li>The user will receive an email invitation</li>
+                    <li>If they don't have an account, they can register first</li>
+                    <li>Once they accept, they'll be added to your restaurant</li>
+                </ul>
+            </div>
+
             <div class="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="secondary" onclick={closeAddModal}>Cancel</Button>
+                <Button type="button" variant="secondary" onclick={closeInviteModal}>Cancel</Button>
                 <Button type="submit" disabled={submitting}>
-                    {submitting ? 'Adding...' : 'Add Staff Member'}
+                    {submitting ? 'Sending...' : 'Send Invitation'}
                 </Button>
             </div>
         </form>

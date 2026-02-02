@@ -52,15 +52,54 @@ async def create_restaurant(restaurant: RestaurantCreate, session: Session = Dep
 
 
 @router.get("/approved", response_model=list[Restaurant])
-async def get_approved_restaurants(session: Session = Depends(get_session)):
+async def get_approved_restaurants(
+    session: Session = Depends(get_session),
+    search: str | None = None,
+    cuisine: str | None = None
+):
     """
     Public endpoint: Fetches all approved restaurants.
     No authentication required - customers can browse without logging in.
+    
+    Query Parameters:
+    - search: Search by restaurant name (case-insensitive partial match)
+    - cuisine: Filter by cuisine type (case-insensitive partial match)
     """
-    restaurants = session.exec(
-        select(Restaurant).where(Restaurant.approval_status == ApprovalStatus.APPROVED)
-    ).all()
+    query = select(Restaurant).where(Restaurant.approval_status == ApprovalStatus.APPROVED)
+    
+    if search:
+        query = query.where(Restaurant.restaurant_name.ilike(f"%{search}%"))
+    
+    if cuisine:
+        query = query.where(Restaurant.cuisine_type.ilike(f"%{cuisine}%"))
+    
+    restaurants = session.exec(query).all()
     return restaurants
+
+
+@router.get("/approved/{restaurant_id}", response_model=Restaurant)
+async def get_approved_restaurant(
+    restaurant_id: int,
+    session: Session = Depends(get_session)
+):
+    """
+    Public endpoint: Fetches a specific approved restaurant by ID.
+    No authentication required - customers can view restaurant details without logging in.
+    """
+    restaurant = session.exec(
+        select(Restaurant).where(
+            Restaurant.id == restaurant_id,
+            Restaurant.approval_status == ApprovalStatus.APPROVED
+        )
+    ).first()
+    
+    if not restaurant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Restaurant not found or not available"
+        )
+    
+    return restaurant
 
 
 @router.get("/", response_model=list[Restaurant])
@@ -208,6 +247,10 @@ class AddMemberRequest(BaseModel):
 class UpdateMembershipRequest(BaseModel):
     role: OrgRole
 
+class InviteStaffRequest(BaseModel):
+    email: str
+    role: OrgRole
+
 
 @router.get("/{restaurant_id}/memberships", response_model=list[MembershipResponse])
 async def get_memberships(
@@ -350,3 +393,191 @@ async def remove_member(
     session.delete(membership)
     session.commit()
     return None
+
+
+# ==================== Staff Invitations ====================
+
+from ..utilities.auth_utils import create_staff_invitation_token, verify_staff_invitation_token
+from ..utilities.email import send_staff_invitation_email
+
+class InvitationResponse(BaseModel):
+    message: str
+    email: str
+
+class AcceptInvitationRequest(BaseModel):
+    token: str
+
+class InvitationInfoResponse(BaseModel):
+    email: str
+    restaurant_id: int
+    restaurant_name: str
+    role: str
+    valid: bool
+
+
+@router.post("/{restaurant_id}/invite", response_model=InvitationResponse)
+async def invite_staff(
+    restaurant_id: int,
+    request: InviteStaffRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(require_manage_restaurant_access())
+):
+    """
+    Invite a user to join a restaurant by email.
+    Sends an invitation email with a secure link.
+    Works for both existing and new users.
+    """
+    # Get the restaurant
+    restaurant = session.exec(select(Restaurant).where(Restaurant.id == restaurant_id)).first()
+    if not restaurant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Restaurant not found")
+    
+    # Check if user already exists and is already a member
+    existing_user = session.exec(select(User).where(User.email == request.email)).first()
+    if existing_user:
+        existing_membership = session.exec(
+            select(Membership).where(
+                Membership.user_id == existing_user.id,
+                Membership.restaurant_id == restaurant_id
+            )
+        ).first()
+        if existing_membership:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail="User is already a member of this restaurant"
+            )
+    
+    # Create invitation token
+    invitation_token = create_staff_invitation_token(
+        email=request.email,
+        restaurant_id=restaurant_id,
+        role=request.role.value
+    )
+    
+    # Send invitation email
+    inviter_name = f"{current_user.first_name} {current_user.last_name}"
+    email_sent = send_staff_invitation_email(
+        to=request.email,
+        invitation_token=invitation_token,
+        restaurant_name=restaurant.restaurant_name,
+        role=request.role.value,
+        inviter_name=inviter_name
+    )
+    
+    # In development, log the invitation link if email fails
+    if not email_sent:
+        import os
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+        invite_link = f"{frontend_url}/accept-invitation?token={invitation_token}"
+        print(f"\n{'='*60}")
+        print(f"EMAIL FAILED - Use this link to accept invitation:")
+        print(f"Email: {request.email}")
+        print(f"Link: {invite_link}")
+        print(f"{'='*60}\n")
+    
+    return InvitationResponse(
+        message=f"Invitation sent to {request.email}" if email_sent else f"Invitation created for {request.email} (check server logs for link)",
+        email=request.email
+    )
+
+
+@router.get("/invitation/verify", response_model=InvitationInfoResponse)
+async def verify_invitation(
+    token: str,
+    session: Session = Depends(get_session)
+):
+    """
+    Verify an invitation token and return its details.
+    Used by the frontend to show invitation info before accepting.
+    """
+    payload = verify_staff_invitation_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired invitation token"
+        )
+    
+    # Get restaurant name
+    restaurant = session.exec(
+        select(Restaurant).where(Restaurant.id == payload["restaurant_id"])
+    ).first()
+    
+    if not restaurant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Restaurant not found"
+        )
+    
+    return InvitationInfoResponse(
+        email=payload["email"],
+        restaurant_id=payload["restaurant_id"],
+        restaurant_name=restaurant.restaurant_name,
+        role=payload["role"],
+        valid=True
+    )
+
+
+@router.post("/invitation/accept", response_model=MembershipResponse)
+async def accept_invitation(
+    request: AcceptInvitationRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Accept an invitation to join a restaurant.
+    The current logged-in user will be added to the restaurant.
+    The user's email must match the invitation email.
+    """
+    # Verify the token
+    payload = verify_staff_invitation_token(request.token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired invitation token"
+        )
+    
+    # Verify the email matches
+    if current_user.email.lower() != payload["email"].lower():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This invitation was sent to a different email address"
+        )
+    
+    # Get the restaurant
+    restaurant = session.exec(
+        select(Restaurant).where(Restaurant.id == payload["restaurant_id"])
+    ).first()
+    if not restaurant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Restaurant not found")
+    
+    # Check if already a member
+    existing = session.exec(
+        select(Membership).where(
+            Membership.user_id == current_user.id,
+            Membership.restaurant_id == payload["restaurant_id"]
+        )
+    ).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You are already a member of this restaurant"
+        )
+    
+    # Create the membership
+    membership = Membership(
+        user_id=current_user.id,
+        restaurant_id=payload["restaurant_id"],
+        role=OrgRole(payload["role"])
+    )
+    session.add(membership)
+    session.commit()
+    session.refresh(membership)
+    
+    return MembershipResponse(
+        id=membership.id,
+        user_id=membership.user_id,
+        restaurant_id=membership.restaurant_id,
+        role=membership.role,
+        user_email=current_user.email,
+        user_name=f"{current_user.first_name} {current_user.last_name}"
+    )

@@ -4,10 +4,40 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from ..utilities.rbac import require_edit_menu_access, require_read_restaurant_access
 
 from ..models.user import User
+from ..models.restaurant import Restaurant, ApprovalStatus
 
 from ..db.session import get_session
 from ..models.recipe import Recipe, RecipeCreate, RecipeRead, RecipeUpdate
 router = APIRouter(prefix="/recipes", tags=["Recipes"])
+
+
+@router.get("/public/{restaurant_id}", response_model=list[RecipeRead])
+async def get_public_menu(
+    restaurant_id: int,
+    session: Session = Depends(get_session)
+):
+    """
+    Public endpoint: Fetches all recipes (menu items) for an approved restaurant.
+    No authentication required - customers can browse menus without logging in.
+    """
+    # Verify the restaurant exists and is approved
+    restaurant = session.exec(
+        select(Restaurant).where(
+            Restaurant.id == restaurant_id,
+            Restaurant.approval_status == ApprovalStatus.APPROVED
+        )
+    ).first()
+    
+    if not restaurant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Restaurant not found or not available"
+        )
+    
+    recipes = session.exec(
+        select(Recipe).where(Recipe.restaurant_id == restaurant_id)
+    ).all()
+    return recipes
 
 @router.post("/", response_model=Recipe, status_code=status.HTTP_201_CREATED)
 async def create_recipe(

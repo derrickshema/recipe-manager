@@ -42,17 +42,17 @@
 - [x] Recipe fields (title, description, ingredients, instructions)
 - [x] Recipe images (S3 upload with LocalStack)
 
-### ⬜ Staff Management
-- [ ] Invite employee by email
-- [ ] View staff members
-- [ ] Change employee role
-- [ ] Remove employee
+### ✅ Staff Management
+- [x] Invite employee by email
+- [x] View staff members
+- [x] Change employee role
+- [x] Remove employee
 
-### ⬜ Customer Experience
+### ✅ Customer Experience
 - [x] Browse approved restaurants
-- [ ] View restaurant menu
-- [ ] Search restaurants (name, cuisine)
-- [ ] Filter restaurants
+- [x] View restaurant menu
+- [x] Search restaurants (name, cuisine)
+- [x] Filter restaurants
 
 ---
 
@@ -115,31 +115,6 @@
 - [ ] Environment variable validation
 - [ ] Secrets management
 - [ ] Production config
-
----
-
-## Advanced Features (Future)
-
-### ⬜ Search
-- [ ] Full-text search (PostgreSQL)
-- [ ] Search by restaurant name
-- [ ] Filter by cuisine type
-- [ ] Elasticsearch (if needed)
-
-### ⬜ Geolocation
-- [ ] Restaurant location (lat/lng)
-- [ ] Distance-based filtering
-- [ ] "Near me" search
-
-### ⬜ Background Jobs
-- [ ] Celery + Redis setup
-- [ ] Email sending queue
-- [ ] Order processing queue
-
-### ⬜ Analytics (Nice-to-have)
-- [ ] Daily/weekly sales
-- [ ] Popular items
-- [ ] Peak hours
 
 ---
 
@@ -233,3 +208,8 @@ The project is "complete" when:
 - **2026-01-27**: Added user management page (view, suspend, delete users)
 - **2026-01-27**: Login now requires verified email (except superadmin)
 - **2026-01-27**: Added restaurant logo upload feature (S3)
+- **2026-02-02**: Moved enums (SystemRole, OrgRole, ApprovalStatus) to shared enums.py
+- **2026-02-02**: Added unique constraint on Membership (user_id, restaurant_id)
+- **2026-02-02**: Implemented staff management (invite by email, view, change role, remove)
+- **2026-02-02**: Added staff invitation email with JWT tokens (7-day expiry)
+- **2026-02-02**: Created accept-invitation page for invited users

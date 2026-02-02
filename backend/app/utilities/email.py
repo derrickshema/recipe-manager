@@ -263,3 +263,86 @@ def send_verification_email(to: str, verification_token: str, name: str) -> bool
     """
     
     return send_email(to, subject, html)
+
+
+def send_staff_invitation_email(to: str, invitation_token: str, restaurant_name: str, role: str, inviter_name: str) -> bool:
+    """
+    Send a staff invitation email with a link to join a restaurant.
+    
+    Args:
+        to: Recipient email address
+        invitation_token: The secure token for accepting the invitation
+        restaurant_name: Name of the restaurant
+        role: The role being offered (e.g., "employee", "restaurant_admin")
+        inviter_name: Name of the person sending the invitation
+    
+    Returns:
+        True if sent successfully, False otherwise
+    """
+    # Format the role for display
+    role_display = "Admin" if role == "restaurant_admin" else "Employee"
+    
+    # Link to accept invitation (existing users) or register (new users)
+    accept_url = f"{FRONTEND_URL}/accept-invitation?token={invitation_token}"
+    
+    subject = f"You're invited to join {restaurant_name} - Recipe Manager"
+    
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 28px;">🍴 Recipe Manager</h1>
+        </div>
+        
+        <div style="background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
+            <h2 style="color: #333; margin-top: 0;">You're Invited! 🎉</h2>
+            
+            <p><strong>{inviter_name}</strong> has invited you to join <strong>{restaurant_name}</strong> as a <strong>{role_display}</strong> on Recipe Manager.</p>
+            
+            <p>As a {role_display.lower()}, you'll be able to:</p>
+            <ul style="color: #555;">
+                {"<li>Manage restaurant settings and staff</li><li>Create and edit recipes</li><li>View all restaurant data</li>" if role == "restaurant_admin" else "<li>View recipes and menu items</li><li>Access restaurant information</li>"}
+            </ul>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{accept_url}" 
+                   style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                          color: white; 
+                          padding: 14px 30px; 
+                          text-decoration: none; 
+                          border-radius: 6px; 
+                          font-weight: bold;
+                          display: inline-block;">
+                    Accept Invitation
+                </a>
+            </div>
+            
+            <p style="color: #666; font-size: 14px;">
+                This invitation will expire in <strong>7 days</strong>.
+            </p>
+            
+            <p style="color: #666; font-size: 14px;">
+                If you don't have an account yet, you'll be prompted to create one after clicking the link.
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
+            
+            <p style="color: #999; font-size: 12px; margin-bottom: 0;">
+                If the button doesn't work, copy and paste this link into your browser:<br>
+                <a href="{accept_url}" style="color: #667eea; word-break: break-all;">{accept_url}</a>
+            </p>
+        </div>
+        
+        <p style="color: #999; font-size: 12px; text-align: center; margin-top: 20px;">
+            © 2026 Recipe Manager. All rights reserved.
+        </p>
+    </body>
+    </html>
+    """
+    
+    return send_email(to, subject, html)

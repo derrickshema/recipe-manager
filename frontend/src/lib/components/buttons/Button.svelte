@@ -8,6 +8,7 @@
 		loading?: boolean;
 		fullWidth?: boolean;
 		children?: Snippet;
+		onclick?: (e: MouseEvent) => void;
 	}
 
 	let {
@@ -18,6 +19,8 @@
 		loading = false,
 		fullWidth = false,
 		children,
+		onclick,
+		class: extraClass = '',
 		...restProps
 	}: Props = $props();
 
@@ -41,6 +44,7 @@
 		variants[variant],
 		sizes[size],
 		fullWidth ? 'w-full' : '',
+		extraClass
 	].join(' '));
 </script>
 
@@ -48,6 +52,7 @@
 	{type}
 	class={className}
 	disabled={disabled || loading}
+	{onclick}
 	{...restProps}
 >
 	{#if loading}

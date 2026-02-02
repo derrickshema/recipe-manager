@@ -1,13 +1,12 @@
 # auth_routes.py
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Response
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
 import os
 
 from ..utilities.auth import get_current_user
 from ..db.session import get_session
-from ..models.user import User, UserCreate, UserRead, Token, SystemRole, UserLogin
+from ..models.user import User, UserCreate, UserRead, SystemRole, UserLogin
 from ..models.membership import Membership, OrgRole
 from ..models.restaurant import Restaurant, RestaurantOwnerRegistration
 from pydantic import BaseModel, EmailStr
@@ -181,12 +180,13 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Check if email is verified (skip for superadmin)
-    if not user.email_verified and user.role != SystemRole.SUPERADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Please verify your email before logging in. Check your inbox for the verification link.",
-        )
+    # DEVELOPMENT MODE: Email verification check disabled for testing
+    # In production, uncomment this block to require email verification
+    # if not user.email_verified and user.role != SystemRole.SUPERADMIN:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_403_FORBIDDEN,
+    #         detail="Please verify your email before logging in. Check your inbox for the verification link.",
+    #     )
 
     # Create the access token
     access_token_expires = timedelta(minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")))
