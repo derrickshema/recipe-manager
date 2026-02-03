@@ -16,7 +16,6 @@ Key Concepts:
 - Webhook Secret: Used to verify the webhook really came from Stripe (not a hacker)
 """
 
-import os
 import stripe
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlmodel import Session, select
@@ -26,20 +25,21 @@ from ..models.order import Order
 from ..models.enums import OrderStatus
 from ..utilities.auth import get_current_user
 from ..models.user import User
+from ..config import settings
 
 router = APIRouter(prefix="/payments", tags=["Payments"])
 
-# Configure Stripe with API key from environment
+# Configure Stripe with API key from centralized settings
 # In production, use STRIPE_SECRET_KEY (live key)
 # In development, use test key (starts with sk_test_)
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "sk_test_placeholder")
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 # Webhook secret for verifying webhook signatures
 # Get this from Stripe Dashboard > Webhooks > Signing secret
-WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "whsec_placeholder")
+WEBHOOK_SECRET = settings.STRIPE_WEBHOOK_SECRET
 
 # Frontend URLs for redirect after payment
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+FRONTEND_URL = settings.FRONTEND_URL
 
 
 @router.post("/create-checkout-session")

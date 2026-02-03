@@ -8,6 +8,7 @@ from ..db.session import get_session
 from ..models.restaurant import Restaurant, RestaurantCreate, RestaurantUpdate, ApprovalStatus
 from ..models.membership import Membership
 from ..models.user import SystemRole, User
+from ..config import settings
 
 
 router = APIRouter(prefix="/restaurants", tags=["Restaurants"])
@@ -466,9 +467,7 @@ async def invite_staff(
     
     # In development, log the invitation link if email fails
     if not email_sent:
-        import os
-        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
-        invite_link = f"{frontend_url}/accept-invitation?token={invitation_token}"
+        invite_link = f"{settings.FRONTEND_URL}/accept-invitation?token={invitation_token}"
         print(f"\n{'='*60}")
         print(f"EMAIL FAILED - Use this link to accept invitation:")
         print(f"Email: {request.email}")

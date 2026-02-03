@@ -6,20 +6,18 @@ It provides functions to upload, delete, and generate URLs for files.
 """
 
 import boto3
-import os
 import uuid
 from botocore.exceptions import ClientError
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Import centralized settings
+from ..config import settings
 
-# S3 Configuration from environment
-S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")  # None for real AWS, URL for LocalStack
-S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "recipe-images")
-AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
+# S3 Configuration from centralized settings
+S3_ENDPOINT_URL = settings.S3_ENDPOINT_URL  # None for real AWS, URL for LocalStack
+S3_BUCKET_NAME = settings.S3_BUCKET_NAME
+AWS_ACCESS_KEY_ID = settings.AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY = settings.AWS_SECRET_ACCESS_KEY
+AWS_REGION = settings.AWS_REGION
 
 
 def get_s3_client():

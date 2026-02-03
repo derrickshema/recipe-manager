@@ -6,19 +6,16 @@ The engine is the core interface to the database - it manages
 the connection pool and executes all database operations.
 """
 
-import os
 from sqlmodel import create_engine
-from dotenv import load_dotenv
 
-# Load environment variables from .env file into os.environ
-# This allows us to keep sensitive config (like DB credentials) out of code
-load_dotenv()
-
-# Get the database connection string from environment
-# Format: postgresql://username:password@host:port/database_name
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Import centralized settings
+# This validates DATABASE_URL exists at startup (not at 3am when something breaks!)
+from ..config import settings
 
 # Create the SQLAlchemy engine - this is the starting point for all DB operations
-# - echo=True: Logs all SQL statements to console (helpful for debugging, disable in production)
+# - echo: Logs all SQL statements (DEBUG mode = helpful, production = too noisy)
 # - The engine manages a pool of database connections for efficiency
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(
+    settings.DATABASE_URL, 
+    echo=settings.DEBUG  # Only log SQL in debug mode
+)

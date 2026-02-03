@@ -2,7 +2,9 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
 from jose import jwt
 from fastapi import HTTPException, status
-import os
+
+# Import centralized settings
+from ..config import settings
 
 # ---Password Hashing---
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated=["auto"])
@@ -22,15 +24,15 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     if expires_delta:
         expire  = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")))
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, os.getenv("SECRET_KEY"), algorithm=os.getenv("ALGORITHM"))
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 def decode_access_token(token: str) -> dict:
     """Verify a JWT token and return the payload."""
     try:
-        payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=[os.getenv("ALGORITHM")])
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         return payload
     except jwt.JWTError:
          # This catches various JWT errors like invalid signature, expired token, etc.
@@ -59,7 +61,7 @@ def create_password_reset_token(email: str) -> str:
         "exp": expire
     }
     
-    return jwt.encode(to_encode, os.getenv("SECRET_KEY"), algorithm=os.getenv("ALGORITHM"))
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
 def verify_password_reset_token(token: str) -> str | None:
@@ -72,8 +74,8 @@ def verify_password_reset_token(token: str) -> str | None:
     try:
         payload = jwt.decode(
             token, 
-            os.getenv("SECRET_KEY"), 
-            algorithms=[os.getenv("ALGORITHM")]
+            settings.SECRET_KEY, 
+            algorithms=[settings.ALGORITHM]
         )
         
         # Verify this is actually a password reset token
@@ -104,7 +106,7 @@ def create_email_verification_token(email: str) -> str:
         "exp": expire
     }
     
-    return jwt.encode(to_encode, os.getenv("SECRET_KEY"), algorithm=os.getenv("ALGORITHM"))
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
 def verify_email_verification_token(token: str) -> str | None:
@@ -117,8 +119,8 @@ def verify_email_verification_token(token: str) -> str | None:
     try:
         payload = jwt.decode(
             token, 
-            os.getenv("SECRET_KEY"), 
-            algorithms=[os.getenv("ALGORITHM")]
+            settings.SECRET_KEY, 
+            algorithms=[settings.ALGORITHM]
         )
         
         # Verify this is actually an email verification token
@@ -152,7 +154,7 @@ def create_staff_invitation_token(email: str, restaurant_id: int, role: str) -> 
         "exp": expire
     }
     
-    return jwt.encode(to_encode, os.getenv("SECRET_KEY"), algorithm=os.getenv("ALGORITHM"))
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
 def verify_staff_invitation_token(token: str) -> dict | None:
@@ -165,8 +167,8 @@ def verify_staff_invitation_token(token: str) -> dict | None:
     try:
         payload = jwt.decode(
             token, 
-            os.getenv("SECRET_KEY"), 
-            algorithms=[os.getenv("ALGORITHM")]
+            settings.SECRET_KEY, 
+            algorithms=[settings.ALGORITHM]
         )
         
         # Verify this is actually a staff invitation token

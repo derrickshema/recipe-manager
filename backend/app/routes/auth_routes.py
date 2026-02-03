@@ -2,7 +2,6 @@
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlmodel import Session, select
-import os
 
 from ..utilities.auth import get_current_user
 from ..db.session import get_session
@@ -12,11 +11,12 @@ from ..models.restaurant import Restaurant, RestaurantOwnerRegistration
 from pydantic import BaseModel, EmailStr
 from ..utilities.auth_utils import verify_password, hash_password, create_access_token, create_password_reset_token, verify_password_reset_token, create_email_verification_token, verify_email_verification_token
 from ..utilities.email import send_password_reset_email, send_verification_email
+from ..config import settings
 
 # Cookie configuration
 COOKIE_NAME = "access_token"
 COOKIE_MAX_AGE = 60 * 60 * 24 * 7  # 7 days in seconds
-COOKIE_SECURE = os.getenv("ENVIRONMENT", "development") == "production"  # True in production
+COOKIE_SECURE = not settings.DEBUG  # HTTPS only in production (when DEBUG=False)
 COOKIE_SAMESITE = "lax"  # "strict" blocks cross-site, "lax" allows top-level navigation
 COOKIE_HTTPONLY = True  # Prevents JavaScript access
 COOKIE_PATH = "/"
@@ -189,7 +189,7 @@ async def login_for_access_token(
     #     )
 
     # Create the access token
-    access_token_expires = timedelta(minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")))
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.username},
         expires_delta=access_token_expires
