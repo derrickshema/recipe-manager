@@ -75,46 +75,34 @@
 
 ## Phase 3: Notifications & Communication
 
-### 🟡 Email Notifications
-- [ ] Welcome email on registration
+### ✅ Email Notifications
 - [x] Password reset email
 - [x] Email verification on signup
-- [ ] Order confirmation email
-- [ ] Order status update emails
-- [ ] Restaurant approval/rejection email
+- [x] Staff invitation email
 
 ---
 
 ## Phase 4: DevOps & Production
 
+### ⬜ Production Readiness
+- [ ] Health check endpoint
+- [ ] Environment variable validation (Pydantic Settings)
+
+### ⬜ Testing
+- [ ] Backend unit tests (pytest) - core auth & order flows
+- [ ] One E2E test (Playwright) - happy path order flow
+
 ### 🟡 Containerization
 - [ ] Backend Dockerfile
 - [ ] Frontend Dockerfile
-- [ ] docker-compose.yml for local dev
+- [ ] docker-compose.yml (backend, frontend, postgres, localstack)
 - [x] Docker Desktop installed
 - [x] LocalStack container for S3 emulation
 
-### ⬜ CI/CD
-- [ ] GitHub Actions workflow
-- [ ] Automated tests on PR
-- [ ] Automated deployment on merge
-
-### ⬜ Testing
-- [ ] Backend unit tests (pytest)
-- [ ] API integration tests
-- [ ] Frontend E2E tests (Playwright)
-- [ ] Auth flow tests
-- [ ] Order flow tests
-
-### ⬜ Monitoring & Logging
-- [ ] Sentry error tracking
-- [ ] Structured logging
-- [ ] Health check endpoint
-
-### ⬜ Environment Configuration
-- [ ] Environment variable validation
-- [ ] Secrets management
-- [ ] Production config
+### ⬜ Deployment
+- [ ] Deploy to Railway/Render
+- [ ] Configure production environment variables
+- [ ] Verify app works in production
 
 ---
 
@@ -144,15 +132,12 @@ These features are explicitly **not** planned:
 | Backend | FastAPI, SQLModel |
 | Database | PostgreSQL |
 | Auth | JWT, bcrypt, httpOnly cookies |
-| File Storage | AWS S3 |
+| File Storage | AWS S3 (LocalStack for dev) |
 | Payments | Stripe |
-| Email | SendGrid/Resend |
+| Email | Resend |
 | Real-time | WebSockets |
-| Background Jobs | Celery + Redis |
 | Containerization | Docker, Docker Compose |
-| CI/CD | GitHub Actions |
-| Monitoring | Sentry |
-| Hosting | TBD (Railway, Render, or AWS) |
+| Hosting | Railway or Render |
 
 ---
 
@@ -173,11 +158,10 @@ These features are explicitly **not** planned:
 |-------|----------|----------|
 | MVP (Core) | Auth, Restaurants, Recipes | ✅ Done |
 | Phase 2 | Orders, Payments, Real-time | ~2 weeks |
-| Phase 3 | Email Notifications | ~1 week |
-| Phase 4 | Docker, CI/CD, Testing | ~2 weeks |
-| Advanced | Search, Background Jobs | ~1 week |
+| Phase 3 | Email Notifications | ✅ Done |
+| Phase 4 | Docker, Testing, Deploy | ~1 week |
 
-**Total:** ~6-8 weeks from current state
+**Total:** ~3-4 weeks from current state
 
 ---
 
@@ -189,10 +173,9 @@ The project is "complete" when:
 2. ⬜ A customer can browse restaurants and place an order
 3. ⬜ Payments are processed via Stripe
 4. ⬜ Order status updates in real-time
-5. ⬜ Email notifications are sent
-6. ⬜ App is containerized and deployed
-7. ⬜ CI/CD pipeline runs tests automatically
-8. ⬜ Errors are tracked in Sentry
+5. ⬜ App runs in Docker containers
+6. ⬜ Basic tests pass (unit + one E2E)
+7. ⬜ App is deployed and accessible online
 
 ---
 
