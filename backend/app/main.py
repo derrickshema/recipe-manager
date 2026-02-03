@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from sqlmodel import SQLModel
 from .db.database import engine
-from .routes import recipe_routes, restaurant_routes, auth_routes, admin_routes, upload_routes, order_routes, websocket_routes
+from .routes import recipe_routes, restaurant_routes, auth_routes, admin_routes, upload_routes, order_routes, websocket_routes, payment_routes
 from fastapi.middleware.cors import CORSMiddleware
 
 # Define lifespan event to create database tables on startup
@@ -30,3 +30,4 @@ app.include_router(admin_routes.router)
 app.include_router(upload_routes.router)
 app.include_router(order_routes.router)
 app.include_router(websocket_routes.router)
+app.include_router(payment_routes.router)

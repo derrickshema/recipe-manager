@@ -62,13 +62,43 @@
 	
 	// Status colors and labels
 	const statusConfig: Record<OrderStatus, { label: string; color: string }> = {
-		pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
+		pending: { label: 'Pending Payment', color: 'bg-yellow-100 text-yellow-800' },
 		paid: { label: 'Paid', color: 'bg-blue-100 text-blue-800' },
 		preparing: { label: 'Preparing', color: 'bg-purple-100 text-purple-800' },
-		ready: { label: 'Ready', color: 'bg-green-100 text-green-800' },
+		ready: { label: 'Ready for Pickup', color: 'bg-green-100 text-green-800' },
 		completed: { label: 'Completed', color: 'bg-gray-100 text-gray-800' },
 		cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-800' }
 	};
+	
+	// Payment state
+	let payingOrderId = $state<number | null>(null);
+	
+	// Handle payment - redirect to Stripe Checkout
+	async function handlePayment(orderId: number) {
+		payingOrderId = orderId;
+		
+		try {
+			const response = await fetch('/api/payments/checkout', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ order_id: orderId })
+			});
+			
+			if (!response.ok) {
+				const data = await response.json();
+				throw new Error(data.message || 'Failed to create checkout session');
+			}
+			
+			const { checkout_url } = await response.json();
+			
+			// Redirect to Stripe Checkout
+			window.location.href = checkout_url;
+		} catch (err) {
+			console.error('Payment error:', err);
+			alert(err instanceof Error ? err.message : 'Payment failed');
+			payingOrderId = null;
+		}
+	}
 	
 	// Format price for display
 	function formatPrice(price: number): string {
@@ -211,6 +241,31 @@
 								<span>Total</span>
 								<span>{formatPrice(order.total_amount)}</span>
 							</div>
+							
+							<!-- Pay Button (for pending orders) -->
+							{#if order.status === 'pending'}
+								<div class="mt-4 pt-4 border-t">
+									<button
+										onclick={() => handlePayment(order.id)}
+										disabled={payingOrderId === order.id}
+										class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+									>
+										{#if payingOrderId === order.id}
+											<svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+												<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+												<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+											</svg>
+											Redirecting to payment...
+										{:else}
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+												<path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
+												<path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd" />
+											</svg>
+											Pay Now - {formatPrice(order.total_amount)}
+										{/if}
+									</button>
+								</div>
+							{/if}
 						</div>
 					{/if}
 				</div>

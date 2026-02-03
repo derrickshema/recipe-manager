@@ -66,10 +66,10 @@
 - [x] Order history (customer & restaurant)
 - [x] Real-time order updates (WebSockets)
 
-### ⬜ Payment Processing
-- [ ] Stripe Checkout integration
-- [ ] Payment confirmation webhook
-- [ ] Order marked as paid
+### ✅ Payment Processing
+- [x] Stripe Checkout integration
+- [x] Payment confirmation webhook
+- [x] Order marked as paid
 
 ---
 
