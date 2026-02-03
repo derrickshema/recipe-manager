@@ -88,8 +88,8 @@
 - [x] Health check endpoint
 - [x] Environment variable validation (Pydantic Settings)
 
-### ⬜ Testing
-- [ ] Backend unit tests (pytest) - core auth & order flows
+### ✅ Testing
+- [x] Backend unit tests (pytest) - auth & order flows (19 tests)
 - [ ] One E2E test (Playwright) - happy path order flow
 
 ### 🟡 Containerization
@@ -157,9 +157,9 @@ These features are explicitly **not** planned:
 | Phase | Features | Duration |
 |-------|----------|----------|
 | MVP (Core) | Auth, Restaurants, Recipes | ✅ Done |
-| Phase 2 | Orders, Payments, Real-time | ~2 weeks |
+| Phase 2 | Orders, Payments, Real-time | ✅ Done |
 | Phase 3 | Email Notifications | ✅ Done |
-| Phase 4 | Docker, Testing, Deploy | ~1 week |
+| Phase 4 | Docker, Testing, Deploy | 🔄 In Progress |
 
 **Total:** ~3-4 weeks from current state
 
@@ -170,11 +170,11 @@ These features are explicitly **not** planned:
 The project is "complete" when:
 
 1. ✅ A restaurant owner can register and manage their menu
-2. ⬜ A customer can browse restaurants and place an order
-3. ⬜ Payments are processed via Stripe
-4. ⬜ Order status updates in real-time
+2. ✅ A customer can browse restaurants and place an order
+3. ✅ Payments are processed via Stripe
+4. ✅ Order status updates in real-time
 5. ⬜ App runs in Docker containers
-6. ⬜ Basic tests pass (unit + one E2E)
+6. 🔄 Basic tests pass (unit + one E2E) - unit tests done
 7. ⬜ App is deployed and accessible online
 
 ---
@@ -196,3 +196,6 @@ The project is "complete" when:
 - **2026-02-02**: Implemented staff management (invite by email, view, change role, remove)
 - **2026-02-02**: Added staff invitation email with JWT tokens (7-day expiry)
 - **2026-02-02**: Created accept-invitation page for invited users
+- **2026-02-03**: Added health check endpoints (/health, /health/ready)
+- **2026-02-03**: Centralized config with Pydantic Settings (environment validation)
+- **2026-02-03**: Set up pytest with 19 integration tests (auth + orders)
