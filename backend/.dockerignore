@@ -42,7 +42,6 @@ migrations/versions/__pycache__/
 *.pyd
 .Python
 
-# Local scripts
-create_superadmin.py
+# Local scripts (keep create_superadmin.py for initial setup)
 reset_database.py
 update_superadmin_password.py

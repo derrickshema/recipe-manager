@@ -20,6 +20,7 @@ from app.models.user import User, SystemRole
 from app.models.restaurant import Restaurant
 from app.models.membership import Membership
 from app.models.recipe import Recipe
+from app.models.order import Order, OrderItem
 from app.utilities.auth_utils import hash_password
 
 def create_superadmin():
