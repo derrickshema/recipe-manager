@@ -1,0 +1,48 @@
+# ============================================================
+# DOCKER IGNORE FILE
+# ============================================================
+# This works like .gitignore but for Docker.
+# Files listed here won't be copied into the container.
+# This makes builds faster and images smaller.
+# ============================================================
+
+# Virtual environment (we create a fresh one in the container)
+venv/
+.venv/
+__pycache__/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Environment files (secrets should be passed via docker-compose)
+.env
+.env.*
+
+# Tests (not needed in production image)
+tests/
+pytest.ini
+.pytest_cache/
+
+# Development files
+*.md
+*.log
+
+# Alembic versions pycache
+migrations/__pycache__/
+migrations/versions/__pycache__/
+
+# Python cache
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Local scripts
+create_superadmin.py
+reset_database.py
+update_superadmin_password.py

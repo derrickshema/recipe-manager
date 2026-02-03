@@ -1,0 +1,30 @@
+# ============================================================
+# DOCKER IGNORE FILE (Frontend)
+# ============================================================
+
+# Dependencies (installed fresh in container)
+node_modules/
+
+# Build output (built fresh in container)
+build/
+.svelte-kit/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Environment files
+.env
+.env.*
+
+# Development files
+*.md
+*.log
+
+# Cache
+.npm/
+.pnpm-store/

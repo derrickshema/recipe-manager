@@ -1,4 +1,6 @@
-import adapter from '@sveltejs/adapter-auto';
+// adapter-node builds a standalone Node.js server
+// This is required for Docker deployment (adapter-auto won't work in containers)
+import adapter from '@sveltejs/adapter-node';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
