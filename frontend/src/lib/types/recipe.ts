@@ -13,6 +13,7 @@ export interface Recipe {
     prep_time?: number;
     cook_time?: number;
     servings?: number;
+    price: number;  // Price of the item
     image_url?: string;  // S3 URL for recipe image
     created_at: string;
     updated_at: string;
@@ -33,6 +34,7 @@ export interface RecipeCreateRequest {
     prep_time?: number;
     cook_time?: number;
     servings?: number;
+    price?: number;  // Price of the item (defaults to 0)
     image_url?: string;  // S3 URL for recipe image
 }
 
@@ -48,6 +50,7 @@ export interface RecipeUpdateRequest {
     prep_time?: number;
     cook_time?: number;
     servings?: number;
+    price?: number;  // Price of the item
     image_url?: string;  // S3 URL for recipe image
 }
 

@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import List, TYPE_CHECKING
 
 from sqlmodel import JSON, Column, Field, Relationship, SQLModel
@@ -16,6 +17,7 @@ class RecipeBase(SQLModel):
     prep_time: int | None = None  # in minutes
     cook_time: int | None = None  # in minutes
     servings: int | None = None
+    price: Decimal = Field(default=Decimal("0.00"), decimal_places=2, description="Price of the item")
     image_url: str | None = None  # S3 URL for recipe image
 
 class Recipe(RecipeBase, table=True):

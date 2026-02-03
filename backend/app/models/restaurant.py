@@ -6,6 +6,7 @@ from .enums import ApprovalStatus
 if TYPE_CHECKING:
     from .recipe import Recipe
     from .membership import Membership
+    from .order import Order
 
 
 class RestaurantBase(SQLModel):
@@ -34,6 +35,9 @@ class Restaurant(RestaurantBase, table=True):
         back_populates="restaurant",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
+    
+    # Orders placed at this restaurant
+    orders: list["Order"] = Relationship(back_populates="restaurant")
 
 class RestaurantCreate(RestaurantBase):
     pass

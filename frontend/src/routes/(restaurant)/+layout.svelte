@@ -32,6 +32,7 @@
             </div>
             <nav class="space-x-4">
                 <a href="/dashboard" class="text-sm font-medium hover:text-primary">Dashboard</a>
+                <a href="/dashboard/orders" class="text-sm font-medium hover:text-primary">Orders</a>
                 <a href="/recipes" class="text-sm font-medium hover:text-primary">Recipes</a>
                 <a href="/staff" class="text-sm font-medium hover:text-primary">Staff</a>
                 <a href="/settings" class="text-sm font-medium hover:text-primary">Settings</a>

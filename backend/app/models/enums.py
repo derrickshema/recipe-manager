@@ -15,3 +15,16 @@ class ApprovalStatus(str, enum.Enum):
     APPROVED = "approved"    # Approved and active
     REJECTED = "rejected"    # Rejected by admin
     SUSPENDED = "suspended"  # Suspended by admin
+
+class OrderStatus(str, enum.Enum):
+    """
+    Order status workflow:
+    PENDING → PAID → PREPARING → READY → COMPLETED
+                ↘ CANCELLED (can cancel before PREPARING)
+    """
+    PENDING = "pending"        # Order created, awaiting payment
+    PAID = "paid"              # Payment confirmed
+    PREPARING = "preparing"    # Restaurant is preparing the order
+    READY = "ready"            # Ready for pickup/delivery
+    COMPLETED = "completed"    # Customer received the order
+    CANCELLED = "cancelled"    # Order was cancelled

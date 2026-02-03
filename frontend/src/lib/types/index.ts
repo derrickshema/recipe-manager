@@ -47,3 +47,13 @@ export { ApprovalStatus } from './restaurant';
 
 // ==================== Role Types ====================
 export { SystemRole, OrgRole } from './roles';
+
+// ==================== Order Types ====================
+export type {
+    Order,
+    OrderItem,
+    OrderItemCreate,
+    OrderCreateRequest,
+    OrderUpdateRequest
+} from './order';
+export { OrderStatus } from './order';

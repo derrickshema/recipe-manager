@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import { isAuthenticated, user, authStore } from '$lib/stores/authStore';
+	import { cartItemCount } from '$lib/stores/cartStore';
 
 	export let showNav = true;
 </script>
@@ -15,6 +16,40 @@
 				<nav class="flex items-center gap-6">
 					{#if $isAuthenticated}
 						<div class="flex items-center gap-4">
+							<!-- Home Link -->
+							<a 
+								href="/home" 
+								class="text-sm font-medium text-gray-600 hover:text-primary transition-colors"
+								class:text-primary={String(page.url.pathname) === '/home'}
+							>
+								Home
+							</a>
+							
+							<!-- Orders Link -->
+							<a 
+								href="/orders" 
+								class="text-sm font-medium text-gray-600 hover:text-primary transition-colors"
+								class:text-primary={String(page.url.pathname) === '/orders'}
+							>
+								My Orders
+							</a>
+							
+							<!-- Cart Link with Badge -->
+							<a 
+								href="/cart" 
+								class="relative text-gray-600 hover:text-primary transition-colors"
+								class:text-primary={String(page.url.pathname) === '/cart'}
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+								</svg>
+								{#if $cartItemCount > 0}
+									<span class="absolute -top-2 -right-2 bg-primary text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+										{$cartItemCount > 9 ? '9+' : $cartItemCount}
+									</span>
+								{/if}
+							</a>
+							
 							<!-- User Profile -->
 							<div class="flex items-center gap-3">
 								<!-- Avatar Circle -->

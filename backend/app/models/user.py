@@ -3,10 +3,11 @@ import re
 from sqlmodel import Column, Field, Relationship, SQLModel, Enum
 from pydantic import field_validator, EmailStr
 from .enums import SystemRole
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .membership import Membership
+    from .order import Order
 
 from .enums import OrgRole
 
@@ -53,6 +54,9 @@ class User(UserBase, table=True):
         back_populates="user",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
+    
+    # Customer's orders
+    orders: List["Order"] = Relationship(back_populates="customer")
 
 class UserCreate(UserBase):
     """Model for creating a new user."""

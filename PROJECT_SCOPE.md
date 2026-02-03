@@ -58,13 +58,13 @@
 
 ## Phase 2: Orders & Payments
 
-### ⬜ Order System
-- [ ] Create order (customer)
-- [ ] Order status workflow (pending → preparing → ready → completed)
-- [ ] View incoming orders (restaurant)
-- [ ] Update order status (restaurant)
-- [ ] Order history (customer & restaurant)
-- [ ] Real-time order updates (WebSockets)
+### ✅ Order System
+- [x] Create order (customer)
+- [x] Order status workflow (pending → preparing → ready → completed)
+- [x] View incoming orders (restaurant)
+- [x] Update order status (restaurant)
+- [x] Order history (customer & restaurant)
+- [x] Real-time order updates (WebSockets)
 
 ### ⬜ Payment Processing
 - [ ] Stripe Checkout integration
